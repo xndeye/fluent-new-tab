@@ -335,3 +335,29 @@
     </div>
   </div>
 </template>
+
+<template id="tpl-feed-reader-modal">
+  <div id="feedReaderModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="feedReaderTitle" inert>
+    <div class="modal-content feed-reader-panel">
+      <div class="feed-reader-actions">
+        <a id="feedReaderOriginal" class="feed-reader-action" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M13 4.5h6.5V11M19.5 4.5 10 14M11 5.5H6.5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V13" />
+          </svg>
+        </a>
+        <button type="button" id="feedReaderClose" class="feed-reader-action">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+            <path d="m6 6 12 12M18 6 6 18" />
+          </svg>
+        </button>
+      </div>
+      <div id="feedReaderScroll" class="feed-reader-scroll" tabindex="0">
+        <article class="feed-reader-article">
+          <div id="feedReaderMeta" class="feed-reader-meta"></div>
+          <h1 id="feedReaderTitle" class="feed-reader-title"></h1>
+          <div id="feedReaderBody" class="feed-reader-body"></div>
+        </article>
+      </div>
+    </div>
+  </div>
+</template>

@@ -14,6 +14,7 @@ import {
   WallpaperSource,
   WallpaperType,
   WallpaperCacheEntry,
+  LauncherProvider,
 } from '@/core/shared/types';
 
 const wallpaperMemoryCache = new Map<string, WallpaperCacheEntry | null>();
@@ -105,7 +106,12 @@ try {
 }
 
 export let launcherEnabled = localStorage.getItem('launcherEnabled') === 'true';
-export let currentProvider = localStorage.getItem('launcherProvider') || 'microsoft';
+export function isLauncherProvider(value: string | null): value is LauncherProvider {
+  return value === 'microsoft' || value === 'google' || value === 'proton' || value === 'bookmarks';
+}
+
+const savedProvider = localStorage.getItem('launcherProvider');
+export let currentProvider: LauncherProvider = isLauncherProvider(savedProvider) ? savedProvider : 'microsoft';
 
 export let wallpaperEnabled = localStorage.getItem('wallpaperEnabled') === 'true';
 export let currentWallpaperSource = (localStorage.getItem('wallpaperSource') || 'local') as WallpaperSource;
@@ -191,7 +197,7 @@ export function setCurrentCityData(val: any) {
 export function setLauncherEnabled(val: any) {
   launcherEnabled = val;
 }
-export function setCurrentProvider(val: any) {
+export function setCurrentProvider(val: LauncherProvider) {
   currentProvider = val;
 }
 export function setWallpaperEnabled(val: any) {

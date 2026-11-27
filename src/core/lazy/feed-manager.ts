@@ -7,7 +7,7 @@
  */
 
 import { getById, mountTemplate } from '@/core/shared/dom-utils';
-import { FeedData, FeedItem } from '@/core/shared/types';
+import { FeedContent, FeedData, FeedItem } from '@/core/shared/types';
 
 const PLUS_ICON = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3.25a.75.75 0 0 1 .75.75v7.25H20a.75.75 0 0 1 0 1.5h-7.25V20a.75.75 0 0 1-1.5 0v-7.25H4a.75.75 0 0 1 0-1.5h7.25V4a.75.75 0 0 1 .75-.75" fill="currentColor"/></svg>`;
 const DELETE_ICON = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 5h4a2 2 0 1 0-4 0M8.5 5a3.5 3.5 0 1 1 7 0h5.75a.75.75 0 0 1 0 1.5h-1.32l-1.17 12.111A3.75 3.75 0 0 1 15.026 22H8.974a3.75 3.75 0 0 1-3.733-3.389L4.07 6.5H2.75a.75.75 0 0 1 0-1.5zm2 4.75a.75.75 0 0 0-1.5 0v7.5a.75.75 0 0 0 1.5 0zM14.25 9a.75.75 0 0 1 .75.75v7.5a.75.75 0 0 1-1.5 0v-7.5a.75.75 0 0 1 .75-.75m-7.516 9.467a2.25 2.25 0 0 0 2.24 2.033h6.052a2.25 2.25 0 0 0 2.24-2.033L18.424 6.5H5.576z" fill="currentColor"/></svg>`;
@@ -48,11 +48,17 @@ function t(k: string, fb: string): string {
   return v && v !== k ? v : fb;
 }
 
+// Parse in the inert template document; never insert the parsed nodes into the page.
+export function parseFeedHtml(raw: string): DocumentFragment {
+  const doc = document.createElement('template').content.ownerDocument;
+  const context = doc.createElement('div');
+  const range = doc.createRange();
+  range.selectNodeContents(context);
+  return range.createContextualFragment(raw);
+}
+
 function sanitizeText(raw: string): string {
-  if (!raw) return '';
-  const d = document.createElement('div');
-  d.innerHTML = raw;
-  return (d.textContent || d.innerText || '').trim();
+  return raw ? (parseFeedHtml(raw).textContent || '').trim() : '';
 }
 
 function sanitizeHttpsUrl(urlStr: string): string | undefined {
@@ -64,7 +70,49 @@ function sanitizeHttpsUrl(urlStr: string): string | undefined {
   return undefined;
 }
 
-function parseFeedXml(xmlStr: string, feedUrl: string): FeedData {
+interface ParsedFeedItem extends FeedItem {
+  body?: FeedContent;
+}
+
+interface ParsedFeed extends FeedData {
+  items: ParsedFeedItem[];
+}
+
+interface CachedFeedContent extends FeedContent {
+  link: string;
+  title: string;
+}
+
+function getFeedChild(node: Element, name: string, namespace = node.namespaceURI): Element | undefined {
+  return Array.from(node.children).find((child) => child.localName === name && child.namespaceURI === namespace);
+}
+
+function getRssContent(node: Element): FeedContent | undefined {
+  const encoded = getFeedChild(node, 'encoded', 'http://purl.org/rss/1.0/modules/content/');
+  const content = encoded?.textContent?.trim() || getFeedChild(node, 'description')?.textContent?.trim();
+  return content ? { content, contentType: 'html' } : undefined;
+}
+
+function getAtomContent(node: Element): FeedContent | undefined {
+  for (const name of ['content', 'summary']) {
+    const element = getFeedChild(node, name);
+    if (!element || element.hasAttribute('src')) continue;
+
+    const type = (element.getAttribute('type') || 'text').toLowerCase();
+    if (type === 'xhtml') {
+      const root = getFeedChild(element, 'div', 'http://www.w3.org/1999/xhtml');
+      if (root) {
+        return { content: new XMLSerializer().serializeToString(root), contentType: 'xhtml' };
+      }
+    } else if (type === 'html' || type === 'text/html' || type === 'text' || type === 'text/plain') {
+      const content = element.textContent?.trim();
+      if (content) return { content, contentType: type === 'html' || type === 'text/html' ? 'html' : 'text' };
+    }
+  }
+  return undefined;
+}
+
+function parseFeedXml(xmlStr: string, feedUrl: string): ParsedFeed {
   const p = new DOMParser();
   const doc = p.parseFromString(xmlStr, 'text/xml');
 
@@ -80,7 +128,7 @@ function parseFeedXml(xmlStr: string, feedUrl: string): FeedData {
   }
 
   let title = '';
-  const items: FeedItem[] = [];
+  const items: ParsedFeedItem[] = [];
 
   if (chan) {
     title = sanitizeText(chan.querySelector(':scope > title')?.textContent || '');
@@ -91,7 +139,8 @@ function parseFeedXml(xmlStr: string, feedUrl: string): FeedData {
       const rawLnk = n.querySelector('link')?.textContent || '';
       const lnk = sanitizeHttpsUrl(rawLnk);
       const pubDate = n.querySelector('pubDate, date, dc\\:date')?.textContent || '';
-      const rawDesc = n.querySelector('description, encoded')?.textContent || '';
+      const body = getRssContent(n);
+      const rawDesc = body?.content || '';
 
       let imgUrl: string | undefined;
       const enc = n.querySelector('enclosure');
@@ -124,6 +173,8 @@ function parseFeedXml(xmlStr: string, feedUrl: string): FeedData {
           pubDate,
           imageUrl: imgUrl,
           feedTitle: title,
+          feedUrl,
+          body,
         });
       }
     });
@@ -138,7 +189,8 @@ function parseFeedXml(xmlStr: string, feedUrl: string): FeedData {
       const rawLnk = lnkNode?.getAttribute('href') || lnkNode?.textContent || '';
       const lnk = sanitizeHttpsUrl(rawLnk);
       const pubDate = n.querySelector('updated, published, pubDate, date')?.textContent || '';
-      const rawSummary = n.querySelector('summary, content')?.textContent || '';
+      const body = getAtomContent(n);
+      const rawSummary = body && body.contentType !== 'text' ? body.content : '';
 
       let imgUrl: string | undefined;
       const media = n.querySelector('thumbnail, content[type^="image"], media\\:content, media\\:thumbnail');
@@ -160,6 +212,8 @@ function parseFeedXml(xmlStr: string, feedUrl: string): FeedData {
           pubDate,
           imageUrl: imgUrl,
           feedTitle: title,
+          feedUrl,
+          body,
         });
       }
     });
@@ -195,6 +249,33 @@ function parseFeedXml(xmlStr: string, feedUrl: string): FeedData {
   };
 }
 
+function contentCacheKey(url: string): string {
+  return `feedContent_${url}`;
+}
+
+export async function getFeedContent(item: FeedItem): Promise<FeedContent | undefined> {
+  if (!item.feedUrl || !item.hasContent) return undefined;
+  const key = contentCacheKey(item.feedUrl);
+  try {
+    return await new Promise<FeedContent | undefined>((resolve) => {
+      chrome.storage.local.get(key, (result) => {
+        if (chrome.runtime.lastError) {
+          resolve(undefined);
+          return;
+        }
+        const entries = result[key] as CachedFeedContent[] | undefined;
+        resolve(
+          Array.isArray(entries)
+            ? entries.find((entry) => entry.link === item.link && entry.title === item.title)
+            : undefined,
+        );
+      });
+    });
+  } catch {
+    return undefined;
+  }
+}
+
 export async function fetchAndValidateFeed(url: string): Promise<FeedData> {
   const res = await fetch(url, {
     headers: {
@@ -207,7 +288,30 @@ export async function fetchAndValidateFeed(url: string): Promise<FeedData> {
   }
 
   const txt = await res.text();
-  return parseFeedXml(txt, url);
+  const feed = parseFeedXml(txt, url);
+  const cacheContent = getFeedUrls().includes(url);
+  const contents: CachedFeedContent[] = [];
+  const items = feed.items.map(({ body, ...item }) => {
+    if (body) contents.push({ link: item.link, title: item.title, ...body });
+    return { ...item, hasContent: cacheContent && !!body };
+  });
+
+  if (!cacheContent) return { ...feed, items };
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      chrome.storage.local.set({ [contentCacheKey(url)]: contents }, () => {
+        const error = chrome.runtime.lastError;
+        if (error) reject(new Error(error.message));
+        else resolve();
+      });
+    });
+  } catch (error) {
+    console.error('Error caching feed content:', error);
+    for (const item of items) item.hasContent = false;
+  }
+
+  return { ...feed, items };
 }
 
 async function requestHostPermission(origin: string): Promise<boolean> {
@@ -316,10 +420,13 @@ function createFeedRow(initialVal = '', isValidated = false): HTMLElement {
         return;
       }
 
+      // Do not persist article bodies for a feed that has not been saved.
       const feedData = await fetchAndValidateFeed(rawVal);
-      try {
-        localStorage.setItem(`feedCache_${rawVal}`, JSON.stringify(feedData));
-      } catch {}
+      if (getFeedUrls().includes(rawVal)) {
+        try {
+          localStorage.setItem(`feedCache_${rawVal}`, JSON.stringify(feedData));
+        } catch {}
+      }
 
       inp.setAttribute('data-validated', 'true');
       inp.classList.remove('is-invalid');
@@ -402,11 +509,16 @@ export function openFeedModal(): void {
           if (val && isValidHttpsUrl(val)) urls.push(val);
         });
 
-        getFeedUrls()
-          .filter((u) => !urls.includes(u))
-          .forEach((u) => localStorage.removeItem(`feedCache_${u}`));
-
+        const previousUrls = getFeedUrls();
         localStorage.setItem('feedRssUrls', JSON.stringify(urls.slice(0, MAX_FEEDS)));
+        previousUrls
+          .filter((u) => !urls.includes(u))
+          .forEach((u) => {
+            localStorage.removeItem(`feedCache_${u}`);
+            chrome.storage.local.remove(contentCacheKey(u), () => {
+              if (chrome.runtime.lastError) console.error(chrome.runtime.lastError);
+            });
+          });
         closeFeedModal();
 
         const isFeedEnabled = localStorage.getItem('feedEnabled') === 'true';

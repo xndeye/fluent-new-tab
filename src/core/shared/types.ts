@@ -22,6 +22,9 @@ export interface EngineConfig {
   icon: string;
 }
 
+export type LauncherAppProvider = 'microsoft' | 'google' | 'proton';
+export type LauncherProvider = LauncherAppProvider | 'bookmarks';
+
 interface LauncherApp {
   name: string;
   url: string;
@@ -80,12 +83,19 @@ export type WeatherUnit = 'c' | 'f';
 export type WallpaperSource = 'local' | 'api';
 export type WallpaperType = 'upload' | 'bing' | 'wikimedia' | 'unsplash' | 'pexels';
 
+export interface FeedContent {
+  content: string;
+  contentType: 'text' | 'html' | 'xhtml';
+}
+
 export interface FeedItem {
   title: string;
   link: string;
   pubDate: string;
   imageUrl?: string;
   feedTitle?: string;
+  feedUrl?: string;
+  hasContent?: boolean;
 }
 
 export interface FeedData {

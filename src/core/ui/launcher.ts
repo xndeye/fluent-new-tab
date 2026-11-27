@@ -8,7 +8,23 @@
 
 import * as refs from '@/core/shared/dom-refs';
 import { foldersEnabled } from '@/core/shared/state';
-import { LauncherProviderData } from '@/core/shared/types';
+import { LauncherProvider, LauncherProviderData } from '@/core/shared/types';
+
+export function updateLauncherMode(provider: LauncherProvider): void {
+  const bookmarks = provider === 'bookmarks';
+  if (refs.launcherGrid) refs.launcherGrid.hidden = bookmarks;
+  if (refs.launcherBookmarks) refs.launcherBookmarks.hidden = !bookmarks;
+  if (refs.launcherFooter) refs.launcherFooter.hidden = bookmarks;
+  refs.launcherPopup?.classList.toggle('bookmarks-mode', bookmarks);
+
+  if (refs.launcherTitle) {
+    const key = bookmarks ? 'bookmarksLabel' : 'appsTitle';
+    const fallback = bookmarks ? 'Bookmarks' : 'Apps';
+    const translate = (window as Window & { getTranslation?: (key: string, fallback: string) => string }).getTranslation;
+    refs.launcherTitle.dataset.i18n = key;
+    refs.launcherTitle.textContent = translate?.(key, fallback) || fallback;
+  }
+}
 
 interface LauncherVisibilityRefs {
   appLauncherWrapper: HTMLElement | null;

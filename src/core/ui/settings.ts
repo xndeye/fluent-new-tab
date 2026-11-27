@@ -11,8 +11,9 @@ import { getInputTarget, getSelectTarget } from '@/core/shared/dom-utils';
 import { applyAccentColor } from '@/core/boot/theme';
 import { getDisplayScaleBounds, getDisplayScaleForType, applyDisplayScale, getTimeFormat } from '@/core/boot/display';
 
-import { currentCityData, activeShortcutDropdowns } from '@/core/shared/state';
-import { WeatherUnit, WallpaperType, WallpaperSource } from '@/core/shared/types';
+import { currentCityData, activeShortcutDropdowns, currentProvider, launcherEnabled, isLauncherProvider } from '@/core/shared/state';
+import { WeatherUnit, WallpaperType, WallpaperSource, LauncherProvider } from '@/core/shared/types';
+import { requestApiPermission } from '@/core/shared/permissions';
 
 export function bindWeatherFeature(options: any): void {
   options.applyInitialWeatherState();
@@ -922,7 +923,36 @@ export function bindShortcutRadiusFeature(options: any): void {
   }
 }
 
-export function bindLauncherFeature(options: any): void {
+let bookmarkView: typeof import('@/core/lazy/launcher-bookmarks') | null = null;
+
+function closeLauncherPopup(): void {
+  refs.launcherPopup?.classList.remove('active');
+  refs.appLauncherBtn?.classList.remove('active');
+  bookmarkView?.closeBookmarkView();
+}
+
+async function openLauncherBookmarks(): Promise<void> {
+  try {
+    const module = await import('@/core/lazy/launcher-bookmarks');
+    if (!launcherEnabled || currentProvider !== 'bookmarks' || !refs.launcherPopup?.classList.contains('active')) return;
+    bookmarkView = module;
+    module.openBookmarkView();
+  } catch (error) {
+    console.error('Error loading bookmarks:', error);
+  }
+}
+
+interface LauncherFeatureOptions {
+  applyInitialLauncherState: () => void;
+  getLauncherEnabled: () => boolean;
+  setLauncherEnabled: (enabled: boolean) => void;
+  updateLauncherVisibility: (enabled: boolean, animate?: boolean) => void;
+  renderLauncher: (provider: LauncherProvider) => void;
+  getCurrentProvider: () => LauncherProvider;
+  setCurrentProvider: (provider: LauncherProvider) => void;
+}
+
+export function bindLauncherFeature(options: LauncherFeatureOptions): void {
   const toggleLauncher = document.getElementById('toggleLauncher') as HTMLInputElement | null;
   const launcherSelectGroup = document.getElementById('launcherSelectGroup');
 
@@ -950,6 +980,7 @@ export function bindLauncherFeature(options: any): void {
       if (checked) {
         options.renderLauncher(options.getCurrentProvider());
       } else {
+        closeLauncherPopup();
         const lms = document.getElementById('launcherMoreSetting');
         if (lms) {
           import('@/core/ui/ui-components').then(({ setCollapsible }) => {
@@ -962,13 +993,29 @@ export function bindLauncherFeature(options: any): void {
 
   if (refs.launcherProvider) {
     refs.launcherProvider.value = options.getCurrentProvider();
-    refs.launcherProvider.addEventListener('change', (event) => {
-      const target = event.target as HTMLSelectElement | null;
+    let selectionRequest = 0;
+    refs.launcherProvider.addEventListener('change', async (event) => {
+      const target = getSelectTarget(event);
       if (!target) return;
+      const requestId = ++selectionRequest;
       const provider = target.value;
+      if (!isLauncherProvider(provider) || provider === options.getCurrentProvider()) return;
+
+      // Request optional permissions directly from the select interaction.
+      if (provider === 'bookmarks') {
+        const granted = await requestApiPermission(['bookmarks']);
+        if (requestId !== selectionRequest) return;
+        if (!granted) {
+          target.value = options.getCurrentProvider();
+          target.dispatchEvent(new Event('change', { bubbles: true }));
+          return;
+        }
+      }
+
+      if (options.getCurrentProvider() === 'bookmarks') closeLauncherPopup();
       options.setCurrentProvider(provider);
       localStorage.setItem('launcherProvider', provider);
-      options.renderLauncher(provider);
+      if (options.getLauncherEnabled()) options.renderLauncher(provider);
     });
 
     if (options.getLauncherEnabled() && refs.appLauncherBtn) {
@@ -1411,8 +1458,7 @@ export function closePopups(except: Element | null = null): void {
     resetSettingsAccordions();
   }
   if (refs.launcherPopup && refs.launcherPopup !== except) {
-    refs.launcherPopup.classList.remove('active');
-    if (refs.appLauncherBtn) refs.appLauncherBtn.classList.remove('active');
+    closeLauncherPopup();
   }
   for (const menu of Array.from(activeShortcutDropdowns)) {
     if (menu !== except) {
@@ -1473,24 +1519,32 @@ export function initGlobalUiSystem(): void {
     refs.appLauncherBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       closePopups(refs.launcherPopup);
-      refs.launcherPopup.classList.toggle('active');
-      refs.appLauncherBtn?.classList.toggle('active');
+      if (refs.launcherPopup.classList.contains('active')) {
+        closeLauncherPopup();
+      } else {
+        refs.launcherPopup.classList.add('active');
+        refs.appLauncherBtn?.classList.add('active');
+        if (currentProvider === 'bookmarks') void openLauncherBookmarks();
+      }
     });
 
     document.addEventListener('click', (e) => {
       const targetNode = e.target as Node | null;
       if (targetNode && refs.launcherPopup.classList.contains('active')) {
+        if (currentProvider === 'bookmarks' && document.getElementById('warningModal')?.contains(targetNode)) return;
         if (!refs.launcherPopup.contains(targetNode) && !refs.appLauncherBtn.contains(targetNode)) {
-          refs.launcherPopup.classList.remove('active');
-          refs.appLauncherBtn.classList.remove('active');
+          closeLauncherPopup();
         }
       }
     });
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && refs.launcherPopup.classList.contains('active')) {
-        refs.launcherPopup.classList.remove('active');
-        refs.appLauncherBtn.classList.remove('active');
+        if (currentProvider === 'bookmarks' && document.getElementById('warningModal')?.classList.contains('active')) {
+          document.getElementById('warning-btn-cancel')?.click();
+          return;
+        }
+        closeLauncherPopup();
       }
     });
   }

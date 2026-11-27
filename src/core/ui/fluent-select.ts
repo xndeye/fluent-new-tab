@@ -96,12 +96,7 @@ export function initCustomSelectSystem(): void {
         nativeSelect.value = option.value;
         nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
 
-        const triggerValue = cache?.triggerValue;
-        if (triggerValue) {
-          triggerValue.textContent = option.textContent;
-          const i18nKey = option.getAttribute('data-i18n');
-          if (i18nKey) triggerValue.setAttribute('data-i18n', i18nKey);
-        }
+        syncAllTriggersText();
 
         closeSelectPopup();
       });
