@@ -7,7 +7,8 @@
  */
 
 import * as refs from '@/core/shared/dom-refs';
-import { getInputTarget, getSelectTarget } from '@/core/shared/dom-utils';
+import { getById, getInputTarget, getSelectTarget } from '@/core/shared/dom-utils';
+import { requestApiPermission } from '@/core/shared/permissions';
 import { applyAccentColor } from '@/core/boot/theme';
 import { getDisplayScaleBounds, getDisplayScaleForType, applyDisplayScale, getTimeFormat } from '@/core/boot/display';
 
@@ -986,6 +987,41 @@ export function bindLauncherFeature(options: any): void {
       });
     }
   }
+}
+
+export function bindBookmarksFeature(): void {
+  const toggle = getById<HTMLInputElement>('toggleBookmarksDrawer');
+  if (!toggle) return;
+
+  const applyVisibility = async () => {
+    const { setBookmarksDrawerEnabled } = await import('@/core/lazy/bookmarks-drawer');
+    setBookmarksDrawerEnabled(toggle.checked);
+  };
+
+  toggle.checked = localStorage.getItem('bookmarksDrawerEnabled') === 'true';
+  if (toggle.checked) {
+    void applyVisibility();
+  }
+
+  toggle.addEventListener('change', async () => {
+    const enabled = toggle.checked;
+    toggle.disabled = true;
+    try {
+      if (enabled && !(await requestApiPermission(['bookmarks']))) {
+        toggle.checked = false;
+        return;
+      }
+
+      localStorage.setItem('bookmarksDrawerEnabled', String(enabled));
+      await applyVisibility();
+    } catch (error) {
+      console.error('Error updating bookmarks drawer:', error);
+      toggle.checked = false;
+      localStorage.setItem('bookmarksDrawerEnabled', 'false');
+    } finally {
+      toggle.disabled = false;
+    }
+  });
 }
 
 export function bindFeedFeature(options: any): void {

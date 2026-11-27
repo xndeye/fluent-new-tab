@@ -268,6 +268,7 @@ async function bootInteractive(): Promise<void> {
       initGlobalUiSystem,
       bindShortcutRadiusFeature,
       bindLauncherFeature,
+      bindBookmarksFeature,
       bindFeedFeature,
       bindReduceEffectsFeature,
       bindSurfaceTintFeature,
@@ -425,6 +426,7 @@ async function bootInteractive(): Promise<void> {
   });
 
   updateLauncherVisibility(state.launcherEnabled, false);
+  bindBookmarksFeature();
 
   const checkHasFeeds = (): boolean => {
     return getFeedUrls().length > 0;

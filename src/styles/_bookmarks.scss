@@ -1,0 +1,289 @@
+/*
+ * Fluent New Tab
+ * Copyright (c) 2026 SnowMint
+ * Licensed under the GNU General Public License v3.0 (GPL-3.0)
+ * You should have received a copy of the GNU General Public License along with this program.
+ * If not, see <https://www.gnu.org/licenses/>.
+ */
+
+@use './mixins' as *;
+
+.bookmarks-drawer {
+  position: fixed;
+  top: 0.675rem;
+  bottom: 0.675rem;
+  left: 0;
+  width: min(22rem, calc(100vw - 2rem));
+  z-index: 550;
+  pointer-events: none;
+  transform: translateX(-100%);
+  transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &[hidden],
+  [hidden] {
+    display: none;
+  }
+
+  &.open {
+    transform: translateX(0.675rem);
+
+    .bookmarks-panel {
+      pointer-events: auto;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .bookmarks-handle svg {
+      transform: rotate(90deg);
+    }
+  }
+
+  .bookmarks-panel {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface-base);
+    color: var(--text-color);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .bookmarks-edge {
+    position: absolute;
+    left: 100%;
+    top: 0;
+    bottom: 0;
+    width: 0.675rem;
+    touch-action: pan-y;
+    pointer-events: none;
+  }
+
+  .bookmarks-handle {
+    @include button-reset;
+    @include flex-center;
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    width: 1.35rem;
+    height: 2.7rem;
+    transform: translateY(-50%);
+    pointer-events: auto;
+    touch-action: pan-y;
+    color: var(--text-color);
+    opacity: 0.55;
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    transition: opacity 0.2s ease, background-color 0.2s ease;
+
+    &:hover,
+    &:focus-visible {
+      opacity: 1;
+      background: var(--surface-base);
+    }
+
+    svg {
+      width: 1rem;
+      height: 1rem;
+      transform: rotate(-90deg);
+      transition: transform 0.2s ease;
+    }
+  }
+
+  .bookmarks-search {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0.9rem 0.9rem 0.45rem;
+    padding: 0.45rem 0.675rem;
+    border: 0.0625rem solid var(--border-base);
+    border-radius: var(--radius-md);
+    background: var(--surface-muted);
+
+    &:focus-within {
+      border-color: var(--accent-color);
+    }
+
+    svg {
+      width: 1rem;
+      height: 1rem;
+      flex-shrink: 0;
+      color: var(--text-muted);
+    }
+
+    input {
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: var(--text-color);
+      font: inherit;
+      font-size: var(--font-size-base);
+      width: 100%;
+      min-width: 0;
+    }
+  }
+
+  .bookmarks-content {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding: 0.45rem 0.675rem 0.9rem;
+
+    ul {
+      list-style: none;
+    }
+  }
+
+  .bookmarks-group {
+    & + .bookmarks-group {
+      margin-top: 0.9rem;
+    }
+
+    h3 {
+      padding: 0.3375rem 0.45rem;
+      color: var(--text-muted);
+      font-size: var(--font-size-sm);
+      font-weight: 500;
+    }
+  }
+
+  .bookmarks-row {
+    @include button-reset;
+    @include hover-surface;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    width: 100%;
+    min-width: 0;
+    min-height: 2rem;
+    padding: 0.225rem 0.45rem;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-base);
+    text-align: start;
+    text-decoration: none;
+    color: var(--text-color);
+
+    &[aria-disabled='true'] {
+      opacity: 0.6;
+      cursor: default;
+    }
+
+    svg,
+    img {
+      width: 1rem;
+      height: 1rem;
+      flex-shrink: 0;
+      object-fit: contain;
+    }
+  }
+
+  .bookmarks-folder {
+    > svg:first-child {
+      width: 0.75rem;
+      height: 0.75rem;
+      transform: rotate(-90deg);
+      transition: transform 0.2s ease;
+    }
+
+    &[aria-expanded='true'] > svg:first-child {
+      transform: rotate(0);
+    }
+  }
+
+  .bookmarks-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .bookmarks-link-item {
+    display: flex;
+    align-items: center;
+    border-radius: var(--radius-sm);
+
+    &:hover,
+    &:focus-within {
+      background: var(--hover-overlay);
+
+      .bookmarks-actions {
+        display: flex;
+      }
+    }
+
+    .bookmarks-row {
+      flex: 1;
+      background: none;
+    }
+  }
+
+  .bookmarks-actions {
+    display: none;
+    flex-shrink: 0;
+    gap: 0.1125rem;
+    padding-inline-end: 0.225rem;
+  }
+
+  .bookmarks-action {
+    @include button-reset;
+    @include flex-center;
+    @include hover-surface(var(--hover-overlay-strong));
+    width: 1.65rem;
+    height: 1.65rem;
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    text-decoration: none;
+
+    svg {
+      width: 0.9rem;
+      height: 0.9rem;
+    }
+
+    &.bookmarks-remove:hover {
+      color: var(--color-danger);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+    }
+  }
+
+  .bookmarks-separator {
+    margin: 0.225rem 0;
+    height: 0.0625rem;
+    background: var(--border-base);
+  }
+
+  .bookmarks-status {
+    padding: 0.675rem;
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+    text-align: center;
+  }
+
+  .bookmarks-permission {
+    @include btn-base;
+    margin: 0.675rem auto;
+  }
+
+  button:focus-visible,
+  a:focus-visible {
+    outline: 0.125rem solid var(--accent-color);
+    outline-offset: -0.125rem;
+  }
+
+  @media (any-pointer: coarse) {
+    &:not(.open) .bookmarks-edge {
+      pointer-events: auto;
+    }
+  }
+
+  @media (hover: none), (pointer: coarse) {
+    .bookmarks-actions {
+      display: flex;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}

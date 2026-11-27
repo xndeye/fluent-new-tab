@@ -20,6 +20,7 @@ export const APP_KEYS: string[] = [
   'foldersEnabled',
   'launcherEnabled',
   'launcherProvider',
+  'bookmarksDrawerEnabled',
   'showGreeting',
   'greetingName',
   'highlightName',
