@@ -363,20 +363,22 @@
 </template>
 
 <template id="tpl-bookmarks-drawer">
-  <div id="bookmarksDrawer" class="bookmarks-drawer" hidden>
-    <aside id="bookmarksPanel" class="bookmarks-panel" inert>
-      <div class="bookmarks-search">
-        <svg aria-hidden="true"><use href="#icon-search" /></svg>
-        <input type="search" id="bookmarksSearch" data-i18n="searchTitle" placeholder="Search" autocomplete="off" />
-      </div>
-      <div id="bookmarksContent" class="bookmarks-content">
-        <div id="bookmarksTree"></div>
-        <ul id="bookmarksResults" hidden></ul>
-      </div>
-    </aside>
-    <div class="bookmarks-edge" aria-hidden="true"></div>
-    <button type="button" id="bookmarksHandle" class="bookmarks-handle" aria-expanded="false" aria-controls="bookmarksPanel">
-      <svg aria-hidden="true"><use href="#icon-chevron-down-small" /></svg>
-    </button>
+  <div id="bookmarksDrawer" class="modal-overlay bookmarks-drawer" hidden>
+    <div class="bookmarks-shell">
+      <aside id="bookmarksPanel" class="bookmarks-panel" tabindex="-1" inert>
+        <div class="bookmarks-search">
+          <svg aria-hidden="true"><use href="#icon-search" /></svg>
+          <input type="search" id="bookmarksSearch" data-i18n="searchTitle" placeholder="Search" autocomplete="off" />
+        </div>
+        <div id="bookmarksContent" class="bookmarks-content">
+          <div id="bookmarksTree"></div>
+          <ul id="bookmarksResults" hidden></ul>
+        </div>
+      </aside>
+      <div class="bookmarks-edge" aria-hidden="true"></div>
+      <button type="button" id="bookmarksHandle" class="bookmarks-handle" aria-expanded="false" aria-controls="bookmarksPanel">
+        <svg aria-hidden="true"><use href="#icon-chevron-right" /></svg>
+      </button>
+    </div>
   </div>
 </template>
