@@ -14,7 +14,8 @@ type BookmarkNode = chrome.bookmarks.BookmarkTreeNode & { type?: 'bookmark' | 'f
 
 const ACTIVE_SURFACES =
   '.modal-overlay.active:not(#bookmarksDrawer), .settings-popup.active, .launcher-popup.active, ' +
-  '#engineDropdown.active, .dropdown-menu.active, #fluent-select-popup.active, #feedDrawer.open';
+  '#engineDropdown.active, .dropdown-menu.active, #fluent-select-popup.active, ' +
+  '#suggestionsContainer.active, #feedDrawer.open';
 
 function bookmarkRequest<T>(request: (callback: (value: T) => void) => void): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -55,9 +56,8 @@ function getBookmarkUrl(value?: string): string | undefined {
 }
 
 function createFavicon(url?: string): SVGSVGElement | HTMLImageElement {
-  const fallback = createIcon('#icon-link');
   if (!url || !/^https?:/i.test(url) || !chrome.runtime.getManifest().permissions?.includes('favicon')) {
-    return fallback;
+    return createIcon('#icon-link');
   }
 
   const image = document.createElement('img');
@@ -68,7 +68,7 @@ function createFavicon(url?: string): SVGSVGElement | HTMLImageElement {
   image.loading = 'lazy';
   image.decoding = 'async';
   image.draggable = false;
-  image.addEventListener('error', () => image.replaceWith(fallback), { once: true });
+  image.addEventListener('error', () => image.replaceWith(createIcon('#icon-link')), { once: true });
   image.src = favicon.href;
   return image;
 }
@@ -137,23 +137,16 @@ class BookmarksDrawer {
     }, { signal });
     this.handle.addEventListener('pointerenter', (event) => {
       if (event.pointerType !== 'mouse' || this.open || performance.now() < this.hoverAfter) return;
-      this.hoverTimer = window.setTimeout(() => void this.openDrawer(), 250);
+      this.hoverTimer = window.setTimeout(() => void this.openDrawer(true), 250);
     }, { signal });
     this.handle.addEventListener('pointerleave', () => clearTimeout(this.hoverTimer), { signal });
     this.search.addEventListener('input', () => void this.searchBookmarks(), { signal });
     this.root.addEventListener('wheel', (event) => event.stopPropagation(), { passive: true, signal });
     document.addEventListener('i18nReady', () => this.updateLabels(), { signal });
     this.root.addEventListener('click', (event) => {
-      // Do not activate moving controls during the opening animation.
-      if (this.open && event.detail && performance.now() < this.hoverAfter) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-    }, { capture: true, signal });
-    this.root.addEventListener('click', (event) => {
       if (!this.open) return;
       event.stopPropagation();
-      if (event.target === this.root) this.closeDrawer();
+      if (event.target === this.root && performance.now() >= this.hoverAfter) this.closeDrawer();
     }, { signal });
     this.root.addEventListener('keydown', (event) => {
       if (this.open) event.stopPropagation();
@@ -165,7 +158,7 @@ class BookmarksDrawer {
     }, { signal });
     this.root.addEventListener('touchstart', (event) => {
       this.touchStart = null;
-      if (event.touches.length !== 1 || this.confirming || (!this.open && document.querySelector(ACTIVE_SURFACES))) return;
+      if (event.touches.length !== 1) return;
       const target = event.target;
       if (!(target instanceof Element) || !target.closest('.bookmarks-edge, .bookmarks-handle')) return;
       const touch = event.touches[0];
@@ -211,23 +204,23 @@ class BookmarksDrawer {
     this.content.scrollTop = 0;
   }
 
-  private async openDrawer(): Promise<void> {
+  private async openDrawer(fromHover = false): Promise<void> {
     if (this.open || !this.events || document.querySelector(ACTIVE_SURFACES)) return;
     clearTimeout(this.hoverTimer);
-    this.previousFocus = document.activeElement as HTMLElement;
+    this.previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     this.open = true;
-    this.hoverAfter = performance.now() + 380;
+    this.hoverAfter = fromHover ? performance.now() + 380 : 0;
     const session = ++this.session;
     this.root.classList.add('active');
     this.root.setAttribute('role', 'dialog');
     this.root.setAttribute('aria-modal', 'true');
-    this.root.setAttribute('aria-label', label('bookmarksLabel', 'Bookmarks'));
+    this.updateLabels();
     this.panel.inert = false;
     this.handle.setAttribute('aria-expanded', 'true');
 
     this.background = Array.from(document.body.children).filter(
       (element): element is HTMLElement =>
-        element instanceof HTMLElement && element !== this.root && element.id !== 'warningModal' && !element.inert,
+        element instanceof HTMLElement && element !== this.root && !element.inert,
     );
     this.background.forEach((element) => { element.inert = true; });
     this.panel.focus({ preventScroll: true });
@@ -255,18 +248,12 @@ class BookmarksDrawer {
 
     if (event.key === 'Tab') {
       const items = Array.from(this.focusScope().querySelectorAll<HTMLElement>(
-        'button:not(:disabled), a[href], input:not(:disabled), [tabindex="0"]',
-      )).filter((element) => element.getClientRects().length > 0);
-      const first = items[0];
-      const last = items[items.length - 1];
-      if (!first) {
+        'button, a[href], input, [tabindex="0"]',
+      )).filter((element) => element.tabIndex >= 0 && !element.matches(':disabled') && element.getClientRects().length > 0);
+      const index = items.indexOf(document.activeElement as HTMLElement);
+      if (index === -1 || (event.shiftKey ? index === 0 : index === items.length - 1)) {
         event.preventDefault();
-      } else if (event.shiftKey && (document.activeElement === first || !items.includes(document.activeElement as HTMLElement))) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
+        (event.shiftKey ? items[items.length - 1] : items[0])?.focus();
       }
       event.stopPropagation();
     } else if (this.confirming) {
@@ -397,7 +384,7 @@ class BookmarksDrawer {
       button.type = 'button';
       button.className = 'bookmarks-row bookmarks-folder';
       button.title = title;
-      button.style.paddingInlineStart = `${0.5 + indent}rem`;
+      button.style.setProperty('--bookmark-indent', `${indent}rem`);
       button.setAttribute('aria-expanded', 'false');
       button.append(createIcon('#icon-chevron-down-small'), createIcon('#icon-folder'), text);
       item.appendChild(button);
@@ -436,7 +423,7 @@ class BookmarksDrawer {
     const url = getBookmarkUrl(node.url);
     const row = url ? document.createElement('a') : document.createElement('span');
     row.className = 'bookmarks-row';
-    row.style.paddingInlineStart = `${1.75 + indent}rem`;
+    row.style.setProperty('--bookmark-indent', `${indent}rem`);
     row.title = title;
     if (row instanceof HTMLAnchorElement && url) {
       row.href = url;
@@ -477,8 +464,17 @@ class BookmarksDrawer {
 
   private confirmRemoval(node: BookmarkNode, title: string, button: HTMLButtonElement, session: number): void {
     if (!this.isCurrent(session) || this.confirming || this.removing) return;
+    warningModal.ensureMounted();
+    const overlay = getById('warningModal')!;
+    if (!this.background.includes(overlay)) this.background.push(overlay);
     this.confirming = true;
     this.root.inert = true;
+    overlay.inert = false;
+    const finish = () => {
+      this.confirming = false;
+      overlay.inert = true;
+      this.root.inert = false;
+    };
     const remove = label('removeLabel', 'Remove');
     warningModal.show({
       title: remove,
@@ -487,13 +483,11 @@ class BookmarksDrawer {
       cancelText: label('btnCancel', 'Cancel'),
       confirmVariant: 'danger',
       onCancel: () => {
-        this.confirming = false;
-        this.root.inert = false;
-        if (button.isConnected) button.focus({ preventScroll: true });
+        finish();
+        (button.isConnected ? button : this.handle).focus({ preventScroll: true });
       },
       onConfirm: async () => {
-        this.confirming = false;
-        this.root.inert = false;
+        finish();
         if (!this.isCurrent(session)) return;
         this.handle.focus({ preventScroll: true });
         this.removing = true;
