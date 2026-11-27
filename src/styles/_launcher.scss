@@ -109,6 +109,43 @@
       }
     }
 
+    .bookmark-link-item {
+      display: flex;
+      align-items: center;
+      gap: 0.225rem;
+
+      .bookmark-row {
+        flex: 1;
+        min-width: 0;
+      }
+    }
+
+    .bookmark-remove-btn {
+      @include button-reset;
+      @include flex-center;
+      width: 1.8rem;
+      height: 1.8rem;
+      flex-shrink: 0;
+      border-radius: var(--radius-sm);
+      color: var(--text-color);
+      transition: background-color 0.2s ease, color 0.2s ease;
+
+      &:hover:not(:disabled) {
+        background-color: color-mix(in srgb, var(--color-danger) 10%, transparent);
+        color: var(--color-danger);
+      }
+
+      &:focus-visible {
+        outline: 0.125rem solid var(--accent-color);
+        outline-offset: -0.125rem;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+    }
+
     .bookmark-label {
       min-width: 0;
       overflow: hidden;

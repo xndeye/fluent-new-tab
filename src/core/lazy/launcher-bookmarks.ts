@@ -8,6 +8,7 @@
 
 import { launcherBookmarks } from '@/core/shared/dom-refs';
 import { checkApiPermission, requestApiPermission } from '@/core/shared/permissions';
+import { showToast, warningModal } from '@/core/ui/ui-components';
 
 type BookmarkNode = chrome.bookmarks.BookmarkTreeNode & { type?: 'bookmark' | 'folder' | 'separator' };
 
@@ -74,6 +75,48 @@ function createList(nodes: BookmarkNode[], depth = 0): HTMLUListElement {
   return list;
 }
 
+function createRemoveButton(node: BookmarkNode, item: HTMLLIElement, title: string): HTMLButtonElement {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'bookmark-remove-btn';
+  const removeLabel = translate('removeLabel', 'Remove');
+  button.title = removeLabel;
+  button.setAttribute('aria-label', `${removeLabel}: ${title}`);
+  button.appendChild(createIcon('#icon-trash'));
+  button.addEventListener('click', () => {
+    warningModal.show({
+      title: translate('removeBookmarkTitle', 'Remove bookmark?'),
+      message: `${translate('removeBookmarkMessage', 'This will remove the bookmark from your browser:')}\n${title}`,
+      confirmText: removeLabel,
+      cancelText: translate('btnCancel', 'Cancel'),
+      confirmVariant: 'danger',
+      onConfirm: async () => {
+        if (!active || !item.isConnected || button.disabled) return;
+        button.disabled = true;
+        try {
+          await new Promise<void>((resolve, reject) => {
+            chrome.bookmarks.remove(node.id, () => {
+              const error = chrome.runtime.lastError;
+              if (error) reject(new Error(error.message));
+              else resolve();
+            });
+          });
+          const list = item.parentElement;
+          item.remove();
+          if (list && list === launcherBookmarks?.firstElementChild && !list.childElementCount) {
+            showStatus('bookmarksEmpty', 'No bookmarks');
+          }
+        } catch (error) {
+          console.error('Error removing bookmark:', error);
+          showToast(translate('removeBookmarkError', 'Unable to remove bookmark'), 'assets/icons/dimiss.svg');
+          button.disabled = false;
+        }
+      },
+    });
+  });
+  return button;
+}
+
 function createNode(node: BookmarkNode, depth: number): HTMLLIElement {
   const item = document.createElement('li');
   if (node.type === 'separator') {
@@ -101,7 +144,9 @@ function createNode(node: BookmarkNode, depth: number): HTMLLIElement {
       row.title = `${title} — ${translate('bookmarksUnsupported', 'This bookmark cannot be opened.')}`;
     }
     row.append(createLinkIcon(url), createLabel(title));
+    item.className = 'bookmark-link-item';
     item.appendChild(row);
+    if (!node.unmodifiable) item.appendChild(createRemoveButton(node, item, title));
     return item;
   }
 

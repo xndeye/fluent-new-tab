@@ -1531,6 +1531,7 @@ export function initGlobalUiSystem(): void {
     document.addEventListener('click', (e) => {
       const targetNode = e.target as Node | null;
       if (targetNode && refs.launcherPopup.classList.contains('active')) {
+        if (currentProvider === 'bookmarks' && document.getElementById('warningModal')?.contains(targetNode)) return;
         if (!refs.launcherPopup.contains(targetNode) && !refs.appLauncherBtn.contains(targetNode)) {
           closeLauncherPopup();
         }
@@ -1539,6 +1540,10 @@ export function initGlobalUiSystem(): void {
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && refs.launcherPopup.classList.contains('active')) {
+        if (currentProvider === 'bookmarks' && document.getElementById('warningModal')?.classList.contains('active')) {
+          document.getElementById('warning-btn-cancel')?.click();
+          return;
+        }
         closeLauncherPopup();
       }
     });
