@@ -15,9 +15,6 @@ const expandedFolderIds = new Set<string>();
 let initialized = false;
 let active = false;
 let revision = 0;
-let refreshTimer: ReturnType<typeof setTimeout> | null = null;
-let detachBookmarkListeners: (() => void) | null = null;
-let savedScrollTop = 0;
 
 function translate(key: string, fallback: string): string {
   const win = window as Window & { getTranslation?: (key: string, fallback: string) => string };
@@ -93,7 +90,6 @@ function createNode(node: BookmarkNode, depth: number): HTMLLIElement {
     const url = getSafeBookmarkUrl(node.url);
     const row = url ? document.createElement('a') : document.createElement('span');
     row.className = 'bookmark-row';
-    row.dataset.bookmarkId = node.id;
     row.style.paddingInlineStart = `${indent + 1.45}rem`;
     row.title = title;
     if (row instanceof HTMLAnchorElement && url) {
@@ -112,7 +108,6 @@ function createNode(node: BookmarkNode, depth: number): HTMLLIElement {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'bookmark-row';
-  button.dataset.bookmarkId = node.id;
   button.style.paddingInlineStart = `${indent}rem`;
   button.title = title;
   button.append(createIcon('#icon-chevron-down-small', 'bookmark-chevron'), createIcon('#icon-folder'), createLabel(title));
@@ -159,16 +154,9 @@ function renderTree(nodes: BookmarkNode[]): void {
     initialized = true;
   }
 
-  const focused = document.activeElement instanceof HTMLElement ? document.activeElement.dataset.bookmarkId : undefined;
-  const scrollTop = launcherBookmarks.querySelector('ul') ? launcherBookmarks.scrollTop : savedScrollTop;
   if (roots.length) launcherBookmarks.replaceChildren(createList(roots));
   else showStatus('bookmarksEmpty', 'No bookmarks');
-  launcherBookmarks.scrollTop = scrollTop;
-  if (focused) {
-    launcherBookmarks.querySelector<HTMLElement>(`[data-bookmark-id="${CSS.escape(focused)}"]`)?.focus({
-      preventScroll: true,
-    });
-  }
+  launcherBookmarks.scrollTop = 0;
 }
 
 function showStatus(key: string, fallback: string, requestAccess = false): void {
@@ -187,9 +175,10 @@ function showStatus(key: string, fallback: string, requestAccess = false): void 
     button.textContent = translate('grantPermissionLabel', 'Grant Permission');
     button.addEventListener('click', async () => {
       button.disabled = true;
+      const requestId = revision;
       const granted = await requestApiPermission(['bookmarks']);
-      if (!active) return;
-      if (granted) void refreshBookmarkTree();
+      if (!active || requestId !== revision) return;
+      if (granted) void loadBookmarkTree();
       else button.disabled = false;
     });
     status.appendChild(button);
@@ -197,68 +186,17 @@ function showStatus(key: string, fallback: string, requestAccess = false): void 
   launcherBookmarks.replaceChildren(status);
 }
 
-function scheduleRefresh(): void {
-  if (!active) return;
-  ++revision;
-  if (refreshTimer !== null) clearTimeout(refreshTimer);
-  refreshTimer = setTimeout(() => {
-    refreshTimer = null;
-    void refreshBookmarkTree();
-  }, 80);
-}
-
-function attachBookmarkListeners(): void {
-  if (detachBookmarkListeners) return;
-  const api = chrome.bookmarks;
-  const events = [api.onCreated, api.onRemoved, api.onChanged, api.onMoved, api.onChildrenReordered, api.onImportEnded];
-  const removers: (() => void)[] = [];
-  detachBookmarkListeners = () => {
-    for (const remove of removers) {
-      try {
-        remove();
-      } catch {}
-    }
-    detachBookmarkListeners = null;
-  };
-  try {
-    for (const event of events) {
-      if (!event) continue;
-      event.addListener(scheduleRefresh);
-      removers.push(() => event.removeListener(scheduleRefresh));
-    }
-  } catch (error) {
-    detachBookmarkListeners();
-    throw error;
-  }
-}
-
-function onPermissionAdded(permissions: chrome.permissions.Permissions): void {
-  if (permissions.permissions?.includes('bookmarks')) scheduleRefresh();
-}
-
-function onPermissionRemoved(permissions: chrome.permissions.Permissions): void {
-  if (!permissions.permissions?.includes('bookmarks')) return;
-  ++revision;
-  if (refreshTimer !== null) clearTimeout(refreshTimer);
-  refreshTimer = null;
-  detachBookmarkListeners?.();
-  showStatus('permissionRequiredTitle', 'Permission Required', true);
-}
-
-async function refreshBookmarkTree(): Promise<void> {
+async function loadBookmarkTree(): Promise<void> {
   if (!active || !launcherBookmarks) return;
   const requestId = ++revision;
   try {
     const granted = await checkApiPermission(['bookmarks']);
     if (!active || requestId !== revision) return;
     if (!granted || !chrome.bookmarks?.getTree) {
-      detachBookmarkListeners?.();
       showStatus('permissionRequiredTitle', 'Permission Required', true);
       return;
     }
 
-    // Subscribe before taking the snapshot so changes during a read are not missed.
-    attachBookmarkListeners();
     const nodes = await new Promise<BookmarkNode[]>((resolve, reject) => {
       chrome.bookmarks.getTree((tree) => {
         const error = chrome.runtime.lastError;
@@ -279,22 +217,12 @@ export function openBookmarkView(): void {
   if (active || !launcherBookmarks) return;
   active = true;
   showStatus('bookmarksLoading', 'Loading bookmarks…');
-  chrome.permissions?.onAdded?.addListener(onPermissionAdded);
-  chrome.permissions?.onRemoved?.addListener(onPermissionRemoved);
-  void refreshBookmarkTree();
+  void loadBookmarkTree();
 }
 
 export function closeBookmarkView(): void {
   if (!active) return;
   active = false;
   ++revision;
-  if (refreshTimer !== null) clearTimeout(refreshTimer);
-  refreshTimer = null;
-  detachBookmarkListeners?.();
-  chrome.permissions?.onAdded?.removeListener(onPermissionAdded);
-  chrome.permissions?.onRemoved?.removeListener(onPermissionRemoved);
-  if (launcherBookmarks) {
-    savedScrollTop = launcherBookmarks.scrollTop;
-    launcherBookmarks.replaceChildren();
-  }
+  launcherBookmarks?.replaceChildren();
 }

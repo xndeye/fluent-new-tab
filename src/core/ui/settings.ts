@@ -11,7 +11,7 @@ import { getInputTarget, getSelectTarget } from '@/core/shared/dom-utils';
 import { applyAccentColor } from '@/core/boot/theme';
 import { getDisplayScaleBounds, getDisplayScaleForType, applyDisplayScale, getTimeFormat } from '@/core/boot/display';
 
-import { currentCityData, activeShortcutDropdowns, isLauncherProvider } from '@/core/shared/state';
+import { currentCityData, activeShortcutDropdowns, currentProvider, launcherEnabled, isLauncherProvider } from '@/core/shared/state';
 import { WeatherUnit, WallpaperType, WallpaperSource, LauncherProvider } from '@/core/shared/types';
 import { requestApiPermission } from '@/core/shared/permissions';
 
@@ -923,6 +923,25 @@ export function bindShortcutRadiusFeature(options: any): void {
   }
 }
 
+let bookmarkView: typeof import('@/core/lazy/launcher-bookmarks') | null = null;
+
+function closeLauncherPopup(): void {
+  refs.launcherPopup?.classList.remove('active');
+  refs.appLauncherBtn?.classList.remove('active');
+  bookmarkView?.closeBookmarkView();
+}
+
+async function openLauncherBookmarks(): Promise<void> {
+  try {
+    const module = await import('@/core/lazy/launcher-bookmarks');
+    if (!launcherEnabled || currentProvider !== 'bookmarks' || !refs.launcherPopup?.classList.contains('active')) return;
+    bookmarkView = module;
+    module.openBookmarkView();
+  } catch (error) {
+    console.error('Error loading bookmarks:', error);
+  }
+}
+
 interface LauncherFeatureOptions {
   applyInitialLauncherState: () => void;
   getLauncherEnabled: () => boolean;
@@ -961,8 +980,7 @@ export function bindLauncherFeature(options: LauncherFeatureOptions): void {
       if (checked) {
         options.renderLauncher(options.getCurrentProvider());
       } else {
-        refs.launcherPopup?.classList.remove('active');
-        refs.appLauncherBtn?.classList.remove('active');
+        closeLauncherPopup();
         const lms = document.getElementById('launcherMoreSetting');
         if (lms) {
           import('@/core/ui/ui-components').then(({ setCollapsible }) => {
@@ -994,6 +1012,7 @@ export function bindLauncherFeature(options: LauncherFeatureOptions): void {
         }
       }
 
+      if (options.getCurrentProvider() === 'bookmarks') closeLauncherPopup();
       options.setCurrentProvider(provider);
       localStorage.setItem('launcherProvider', provider);
       if (options.getLauncherEnabled()) options.renderLauncher(provider);
@@ -1439,8 +1458,7 @@ export function closePopups(except: Element | null = null): void {
     resetSettingsAccordions();
   }
   if (refs.launcherPopup && refs.launcherPopup !== except) {
-    refs.launcherPopup.classList.remove('active');
-    if (refs.appLauncherBtn) refs.appLauncherBtn.classList.remove('active');
+    closeLauncherPopup();
   }
   for (const menu of Array.from(activeShortcutDropdowns)) {
     if (menu !== except) {
@@ -1501,24 +1519,27 @@ export function initGlobalUiSystem(): void {
     refs.appLauncherBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       closePopups(refs.launcherPopup);
-      refs.launcherPopup.classList.toggle('active');
-      refs.appLauncherBtn?.classList.toggle('active');
+      if (refs.launcherPopup.classList.contains('active')) {
+        closeLauncherPopup();
+      } else {
+        refs.launcherPopup.classList.add('active');
+        refs.appLauncherBtn?.classList.add('active');
+        if (currentProvider === 'bookmarks') void openLauncherBookmarks();
+      }
     });
 
     document.addEventListener('click', (e) => {
       const targetNode = e.target as Node | null;
       if (targetNode && refs.launcherPopup.classList.contains('active')) {
         if (!refs.launcherPopup.contains(targetNode) && !refs.appLauncherBtn.contains(targetNode)) {
-          refs.launcherPopup.classList.remove('active');
-          refs.appLauncherBtn.classList.remove('active');
+          closeLauncherPopup();
         }
       }
     });
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && refs.launcherPopup.classList.contains('active')) {
-        refs.launcherPopup.classList.remove('active');
-        refs.appLauncherBtn.classList.remove('active');
+        closeLauncherPopup();
       }
     });
   }
