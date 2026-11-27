@@ -411,17 +411,22 @@ async function bootInteractive(): Promise<void> {
     getLauncherEnabled: () => state.launcherEnabled,
     setLauncherEnabled: state.setLauncherEnabled,
     updateLauncherVisibility,
-    renderLauncher: (provider: string) => {
-      Promise.all([import('@/core/ui/launcher-data'), import('@/core/ui/launcher')]).then(([mData, mLauncher]) => {
-        const data = mData.launcherData[provider];
-        mLauncher.renderLauncherApps(data, {
+    renderLauncher: async (provider: typeof state.currentProvider) => {
+      const launcher = await import('@/core/ui/launcher');
+      if (provider !== state.currentProvider || !state.launcherEnabled) return;
+      launcher.updateLauncherMode(provider);
+
+      if (provider !== 'bookmarks') {
+        const { launcherData } = await import('@/core/ui/launcher-data');
+        if (provider !== state.currentProvider || !state.launcherEnabled) return;
+        launcher.renderLauncherApps(launcherData[provider], {
           launcherGrid: refs.launcherGrid,
           launcherAllAppsLink: refs.launcherAllAppsLink,
         });
-      });
+      }
     },
-    getCurrentProvider: () => state.currentProvider as any,
-    setCurrentProvider: state.setCurrentProvider as any,
+    getCurrentProvider: () => state.currentProvider,
+    setCurrentProvider: state.setCurrentProvider,
   });
 
   updateLauncherVisibility(state.launcherEnabled, false);

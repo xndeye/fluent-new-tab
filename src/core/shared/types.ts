@@ -22,6 +22,9 @@ export interface EngineConfig {
   icon: string;
 }
 
+export type LauncherAppProvider = 'microsoft' | 'google' | 'proton';
+export type LauncherProvider = LauncherAppProvider | 'bookmarks';
+
 interface LauncherApp {
   name: string;
   url: string;

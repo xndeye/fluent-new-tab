@@ -11,8 +11,9 @@ import { getInputTarget, getSelectTarget } from '@/core/shared/dom-utils';
 import { applyAccentColor } from '@/core/boot/theme';
 import { getDisplayScaleBounds, getDisplayScaleForType, applyDisplayScale, getTimeFormat } from '@/core/boot/display';
 
-import { currentCityData, activeShortcutDropdowns } from '@/core/shared/state';
-import { WeatherUnit, WallpaperType, WallpaperSource } from '@/core/shared/types';
+import { currentCityData, activeShortcutDropdowns, isLauncherProvider } from '@/core/shared/state';
+import { WeatherUnit, WallpaperType, WallpaperSource, LauncherProvider } from '@/core/shared/types';
+import { requestApiPermission } from '@/core/shared/permissions';
 
 export function bindWeatherFeature(options: any): void {
   options.applyInitialWeatherState();
@@ -922,7 +923,17 @@ export function bindShortcutRadiusFeature(options: any): void {
   }
 }
 
-export function bindLauncherFeature(options: any): void {
+interface LauncherFeatureOptions {
+  applyInitialLauncherState: () => void;
+  getLauncherEnabled: () => boolean;
+  setLauncherEnabled: (enabled: boolean) => void;
+  updateLauncherVisibility: (enabled: boolean, animate?: boolean) => void;
+  renderLauncher: (provider: LauncherProvider) => void;
+  getCurrentProvider: () => LauncherProvider;
+  setCurrentProvider: (provider: LauncherProvider) => void;
+}
+
+export function bindLauncherFeature(options: LauncherFeatureOptions): void {
   const toggleLauncher = document.getElementById('toggleLauncher') as HTMLInputElement | null;
   const launcherSelectGroup = document.getElementById('launcherSelectGroup');
 
@@ -950,6 +961,8 @@ export function bindLauncherFeature(options: any): void {
       if (checked) {
         options.renderLauncher(options.getCurrentProvider());
       } else {
+        refs.launcherPopup?.classList.remove('active');
+        refs.appLauncherBtn?.classList.remove('active');
         const lms = document.getElementById('launcherMoreSetting');
         if (lms) {
           import('@/core/ui/ui-components').then(({ setCollapsible }) => {
@@ -962,13 +975,28 @@ export function bindLauncherFeature(options: any): void {
 
   if (refs.launcherProvider) {
     refs.launcherProvider.value = options.getCurrentProvider();
-    refs.launcherProvider.addEventListener('change', (event) => {
-      const target = event.target as HTMLSelectElement | null;
+    let selectionRequest = 0;
+    refs.launcherProvider.addEventListener('change', async (event) => {
+      const target = getSelectTarget(event);
       if (!target) return;
+      const requestId = ++selectionRequest;
       const provider = target.value;
+      if (!isLauncherProvider(provider) || provider === options.getCurrentProvider()) return;
+
+      // Request optional permissions directly from the select interaction.
+      if (provider === 'bookmarks') {
+        const granted = await requestApiPermission(['bookmarks']);
+        if (requestId !== selectionRequest) return;
+        if (!granted) {
+          target.value = options.getCurrentProvider();
+          target.dispatchEvent(new Event('change', { bubbles: true }));
+          return;
+        }
+      }
+
       options.setCurrentProvider(provider);
       localStorage.setItem('launcherProvider', provider);
-      options.renderLauncher(provider);
+      if (options.getLauncherEnabled()) options.renderLauncher(provider);
     });
 
     if (options.getLauncherEnabled() && refs.appLauncherBtn) {
