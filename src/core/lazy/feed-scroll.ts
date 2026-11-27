@@ -100,7 +100,7 @@ export function initFeedScroll(): void {
   });
 
   window.addEventListener('keydown', (e: KeyboardEvent) => {
-    if (e.key === 'Escape' && drawer.classList.contains('open') && !hasActiveModal()) {
+    if (!e.defaultPrevented && e.key === 'Escape' && drawer.classList.contains('open') && !hasActiveModal()) {
       setDrawerOpen(false);
     }
   });
