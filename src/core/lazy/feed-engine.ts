@@ -13,6 +13,7 @@ import { fetchAndValidateFeed, getFeedUrls } from '@/core/lazy/feed-manager';
 const CACHE_TTL = 30 * 60 * 1000;
 let loadedFeeds: FeedData[] = [];
 let activeFeedId = 'all';
+let loadRevision = 0;
 
 function formatRelativeTime(dateStr: string): string {
   if (!dateStr) return '';
@@ -76,6 +77,28 @@ function renderGridItems(items: FeedItem[]): void {
     card.href = it.link;
     card.target = '_blank';
     card.rel = 'noopener noreferrer';
+
+    if (it.hasContent) {
+      card.addEventListener('click', (event) => {
+        if (
+          event.defaultPrevented ||
+          event.button !== 0 ||
+          event.ctrlKey ||
+          event.metaKey ||
+          event.shiftKey ||
+          event.altKey
+        ) {
+          return;
+        }
+        event.preventDefault();
+        import('@/core/lazy/feed-reader')
+          .then(({ openFeedReader }) => openFeedReader(it, card))
+          .catch((error) => {
+            console.error('Error loading feed reader:', error);
+            chrome.tabs.create({ url: card.href });
+          });
+      });
+    }
 
     const thumbWrap = document.createElement('div');
     thumbWrap.className = 'feed-post-thumb-wrapper';
@@ -248,6 +271,7 @@ function renderNavTabs(): void {
 }
 
 export async function loadAndRenderFeeds(): Promise<void> {
+  const revision = ++loadRevision;
   const urls = getFeedUrls();
 
   if (!Array.isArray(urls) || urls.length === 0) {
@@ -268,7 +292,10 @@ export async function loadAndRenderFeeds(): Promise<void> {
         const d = JSON.parse(s) as FeedData;
         if (d && Array.isArray(d.items)) {
           cachedList.push(d);
-          if (Date.now() - (d.updatedAt || 0) >= CACHE_TTL) {
+          if (
+            Date.now() - (d.updatedAt || 0) >= CACHE_TTL ||
+            d.items.some((item) => typeof item.hasContent !== 'boolean')
+          ) {
             urlsToFetch.push(u);
           }
           return;
@@ -289,12 +316,16 @@ export async function loadAndRenderFeeds(): Promise<void> {
   const results = await Promise.allSettled(
     urlsToFetch.map(async (u) => {
       const fresh = await fetchAndValidateFeed(u);
-      try {
-        localStorage.setItem(`feedCache_${u}`, JSON.stringify(fresh));
-      } catch {}
+      if (getFeedUrls().includes(u)) {
+        try {
+          localStorage.setItem(`feedCache_${u}`, JSON.stringify(fresh));
+        } catch {}
+      }
       return fresh;
     }),
   );
+
+  if (revision !== loadRevision) return;
 
   const freshMap = new Map<string, FeedData>();
   results.forEach((r) => {
@@ -304,7 +335,7 @@ export async function loadAndRenderFeeds(): Promise<void> {
   });
 
   const updated: FeedData[] = [];
-  urls.forEach((u) => {
+  getFeedUrls().forEach((u) => {
     const item = freshMap.get(u) || cachedList.find((c) => c.url === u);
     if (item) {
       updated.push(item);
