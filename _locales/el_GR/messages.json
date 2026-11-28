@@ -82,6 +82,9 @@
   "displayGreeting": {
     "message": "Χαιρετισμός"
   },
+  "greetingDefaultName": {
+    "message": "φιλαράκι"
+  },
   "greetingNameLabel": {
     "message": "Το όνομά σας"
   },

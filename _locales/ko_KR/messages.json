@@ -82,6 +82,9 @@
   "displayGreeting": {
     "message": "인사말"
   },
+  "greetingDefaultName": {
+    "message": "사용자"
+  },
   "greetingNameLabel": {
     "message": "이름"
   },

@@ -82,6 +82,9 @@
   "displayGreeting": {
     "message": "Üdvözlet"
   },
+  "greetingDefaultName": {
+    "message": "barátom"
+  },
   "greetingNameLabel": {
     "message": "Neved"
   },

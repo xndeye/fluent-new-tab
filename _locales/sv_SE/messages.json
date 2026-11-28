@@ -82,6 +82,9 @@
   "displayGreeting": {
     "message": "Hälsning"
   },
+  "greetingDefaultName": {
+    "message": "min vän"
+  },
   "greetingNameLabel": {
     "message": "Ditt namn"
   },

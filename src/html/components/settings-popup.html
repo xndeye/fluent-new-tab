@@ -241,6 +241,7 @@
             <option value="time" data-i18n="displayTime">Time</option>
             <option value="date" data-i18n="displayDate">Date</option>
             <option value="timedate" data-i18n="displayTimeDate">Time & Date</option>
+            <option value="hitokoto" data-i18n="displayHitokoto">Hitokoto</option>
           </select>
         </div>
       </div>
@@ -301,6 +302,123 @@
                   </svg>
                 </span>
               </label>
+            </div>
+          </div>
+
+          <div id="subHitokoto" class="display-sub-setting" style="display: none">
+            <fieldset class="setting-field-group" id="hitokotoCategories">
+              <legend class="setting-label-small" data-i18n="hitokotoCategory">Categories</legend>
+              <div class="hitokoto-category-options">
+                <label class="hitokoto-category-option">
+                  <span class="fluent-checkbox">
+                    <input type="checkbox" value="a" />
+                    <span class="checkbox-box" aria-hidden="true"></span>
+                  </span>
+                  <span data-i18n="hitokotoAnimation">Animation</span>
+                </label>
+                <label class="hitokoto-category-option">
+                  <span class="fluent-checkbox">
+                    <input type="checkbox" value="b" />
+                    <span class="checkbox-box" aria-hidden="true"></span>
+                  </span>
+                  <span data-i18n="hitokotoComics">Comics</span>
+                </label>
+                <label class="hitokoto-category-option">
+                  <span class="fluent-checkbox">
+                    <input type="checkbox" value="c" />
+                    <span class="checkbox-box" aria-hidden="true"></span>
+                  </span>
+                  <span data-i18n="hitokotoGames">Games</span>
+                </label>
+                <label class="hitokoto-category-option">
+                  <span class="fluent-checkbox">
+                    <input type="checkbox" value="d" />
+                    <span class="checkbox-box" aria-hidden="true"></span>
+                  </span>
+                  <span data-i18n="hitokotoLiterature">Literature</span>
+                </label>
+                <label class="hitokoto-category-option">
+                  <span class="fluent-checkbox">
+                    <input type="checkbox" value="e" />
+                    <span class="checkbox-box" aria-hidden="true"></span>
+                  </span>
+                  <span data-i18n="hitokotoOriginal">Original</span>
+                </label>
+                <label class="hitokoto-category-option">
+                  <span class="fluent-checkbox">
+                    <input type="checkbox" value="f" />
+                    <span class="checkbox-box" aria-hidden="true"></span>
+                  </span>
+                  <span data-i18n="hitokotoInternet">Internet</span>
+                </label>
+                <label class="hitokoto-category-option">
+                  <span class="fluent-checkbox">
+                    <input type="checkbox" value="g" />
+                    <span class="checkbox-box" aria-hidden="true"></span>
+                  </span>
+                  <span data-i18n="hitokotoOther">Other</span>
+                </label>
+                <label class="hitokoto-category-option">
+                  <span class="fluent-checkbox">
+                    <input type="checkbox" value="h" />
+                    <span class="checkbox-box" aria-hidden="true"></span>
+                  </span>
+                  <span data-i18n="hitokotoFilm">Film &amp; TV</span>
+                </label>
+                <label class="hitokoto-category-option">
+                  <span class="fluent-checkbox">
+                    <input type="checkbox" value="i" />
+                    <span class="checkbox-box" aria-hidden="true"></span>
+                  </span>
+                  <span data-i18n="hitokotoPoetry">Poetry</span>
+                </label>
+                <label class="hitokoto-category-option">
+                  <span class="fluent-checkbox">
+                    <input type="checkbox" value="j" />
+                    <span class="checkbox-box" aria-hidden="true"></span>
+                  </span>
+                  <span data-i18n="hitokotoMusic">NetEase Cloud Music</span>
+                </label>
+                <label class="hitokoto-category-option">
+                  <span class="fluent-checkbox">
+                    <input type="checkbox" value="k" />
+                    <span class="checkbox-box" aria-hidden="true"></span>
+                  </span>
+                  <span data-i18n="hitokotoPhilosophy">Philosophy</span>
+                </label>
+                <label class="hitokoto-category-option">
+                  <span class="fluent-checkbox">
+                    <input type="checkbox" value="l" />
+                    <span class="checkbox-box" aria-hidden="true"></span>
+                  </span>
+                  <span data-i18n="hitokotoWit">Wit</span>
+                </label>
+              </div>
+            </fieldset>
+
+            <div class="setting-field-group">
+              <label id="hitokotoApiLabel" class="setting-label-small" data-i18n="hitokotoApi">Endpoint</label>
+              <div class="fluent-select-container">
+                <button type="button" class="fluent-select-trigger" data-target="hitokotoApiSelect"
+                  aria-labelledby="hitokotoApiLabel hitokotoApiValue">
+                  <span id="hitokotoApiValue" class="fluent-select-value" data-i18n="hitokotoChina">Mainland China</span>
+                  <span class="fluent-select-arrow"></span>
+                </button>
+                <select id="hitokotoApiSelect" class="settings-select hidden-native-select" aria-labelledby="hitokotoApiLabel">
+                  <option value="china" data-i18n="hitokotoChina">Mainland China</option>
+                  <option value="international" data-i18n="hitokotoInternational">International</option>
+                  <option value="custom" data-i18n="hitokotoCustom">Self-hosted</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="setting-field-group" id="hitokotoUrlGroup" style="display: none">
+              <label for="hitokotoUrlInput" class="setting-label-small" data-i18n="hitokotoUrl">Self-hosted API URL</label>
+              <div class="input-row">
+                <input type="url" id="hitokotoUrlInput" placeholder="https://example.com/hitokoto" autocomplete="off"
+                  aria-describedby="hitokotoUrlHint" />
+              </div>
+              <span id="hitokotoUrlHint" class="setting-label-small" data-i18n="hitokotoCors">The endpoint must allow cross-origin requests (CORS).</span>
             </div>
           </div>
 
@@ -560,10 +678,6 @@
             <input type="checkbox" id="showPanelFeed" />
             <span class="checkbox-box" aria-hidden="true"><svg><use href="#icon-checkmark" /></svg></span>
           </label>
-        </div>
-        <div class="switch-row">
-          <span class="setting-label-small" data-i18n="panelFeedSources">Feed sources</span>
-          <button type="button" id="editFeedRssSettingsBtn" class="accent-btn" data-i18n="editLabel">Edit</button>
         </div>
       </div>
     </div>

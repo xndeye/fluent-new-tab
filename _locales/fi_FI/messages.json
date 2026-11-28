@@ -82,6 +82,9 @@
   "displayGreeting": {
     "message": "Tervehdys"
   },
+  "greetingDefaultName": {
+    "message": "ystävä"
+  },
   "greetingNameLabel": {
     "message": "Nimesi"
   },

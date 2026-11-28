@@ -17,6 +17,7 @@ import {
 } from '@/core/boot/theme';
 import { bootWallpaper, isWallpaperCacheValid, getActiveWallpaperKey } from '@/core/boot/wallpaper-render';
 import { initDisplayWidget } from '@/core/boot/display';
+import { refreshHitokotoIfStale } from '@/core/boot/hitokoto';
 import { renderShortcutsGrid } from '@/core/boot/shortcuts-render';
 import { engines } from '@/core/boot/search-engines';
 import { applyGoogleSearchParams } from '@/core/boot/search';
@@ -617,12 +618,7 @@ async function bootInteractive(): Promise<void> {
     setDisplayScale: state.setDisplayScale,
     setDisplayVisible: (visible: boolean) => {
       localStorage.setItem('displayEnabled', String(visible));
-      if (refs.displayWrapper) {
-        refs.displayWrapper.style.display = visible ? 'flex' : 'none';
-        if (visible) {
-          initDisplayWidget(refs.displayWrapper);
-        }
-      }
+      initDisplayWidget(refs.displayWrapper);
     },
     getDisplayEnabled: () => localStorage.getItem('displayEnabled') !== 'false',
     initDisplayWidget,
@@ -767,6 +763,17 @@ document.addEventListener('i18nReady', () => {
   applyBrandInterval();
   triggerShortcutsRender();
   import('@/core/lazy/providers/weather-api').then((m) => m.renderWeatherAlertWidget());
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (
+    !document.hidden &&
+    refs.displayWrapper?.dataset.currentMode === 'hitokoto' &&
+    localStorage.getItem('displayType') === 'hitokoto' &&
+    localStorage.getItem('displayEnabled') !== 'false'
+  ) {
+    refreshHitokotoIfStale(refs.displayWrapper);
+  }
 });
 
 document.body.addEventListener('dragover', (e) => {

@@ -184,12 +184,10 @@ export function initPanel(): void {
       setOpen(false);
     }
   });
-  for (const id of ['editFeedRssBtn', 'editFeedRssSettingsBtn']) {
-    const button = getById<HTMLButtonElement>(id)!;
-    button.addEventListener('click', () => {
-      void import('@/core/lazy/feed-manager').then(({ openFeedModal }) => openFeedModal(button));
-    });
-  }
+  const editFeedButton = getById<HTMLButtonElement>('editFeedRssBtn')!;
+  editFeedButton.addEventListener('click', () => {
+    void import('@/core/lazy/feed-manager').then(({ openFeedModal }) => openFeedModal(editFeedButton));
+  });
 
   toggle.checked = localStorage.getItem('feedEnabled') === 'true';
   const savedMode = localStorage.getItem('feedMode');

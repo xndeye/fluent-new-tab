@@ -6,6 +6,8 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { renderHitokoto, stopHitokoto } from '@/core/boot/hitokoto';
+
 let displayInterval: number | null = null;
 
 export function getDisplayScaleBounds(displayType: string): {
@@ -15,7 +17,7 @@ export function getDisplayScaleBounds(displayType: string): {
   const hasSearch = localStorage.getItem('searchBarVisible') !== 'false';
   const hasShortcuts = localStorage.getItem('shortcutsVisible') !== 'false';
 
-  if (displayType === 'greeting') {
+  if (displayType === 'greeting' || displayType === 'hitokoto') {
     return { min: 50, max: 140 };
   }
   if (displayType === 'date' || displayType === 'weekday') {
@@ -62,11 +64,13 @@ export function initDisplayWidget(wrapper: HTMLElement | null): void {
   if (!wrapper) return;
   if (displayInterval) {
     window.clearInterval(displayInterval);
+    displayInterval = null;
   }
 
   const isEnabled = localStorage.getItem('displayEnabled') !== 'false';
 
   if (!isEnabled) {
+    stopHitokoto(wrapper);
     wrapper.style.display = 'none';
     return;
   }
@@ -75,6 +79,7 @@ export function initDisplayWidget(wrapper: HTMLElement | null): void {
   const currentMode = localStorage.getItem('displayType') || 'greeting';
   applyDisplayScale(currentMode);
   updateDisplayContent(wrapper);
+  if (currentMode === 'hitokoto') return;
   displayInterval = window.setInterval(() => {
     updateDisplayContent(wrapper);
   }, 1000);
@@ -86,12 +91,15 @@ function updateDisplayContent(wrapper: HTMLElement): void {
     displayType = 'timedate';
   }
   if (wrapper.dataset.currentMode !== displayType) {
+    if (wrapper.dataset.currentMode === 'hitokoto') stopHitokoto(wrapper);
     wrapper.textContent = '';
     wrapper.dataset.currentMode = displayType;
     wrapper.dataset.lastCache = '';
   }
   if (displayType === 'greeting') {
     renderGreeting(wrapper);
+  } else if (displayType === 'hitokoto') {
+    void renderHitokoto(wrapper);
   } else {
     renderTimeDate(wrapper, displayType);
   }
@@ -372,6 +380,13 @@ function renderGreeting(wrapper: HTMLElement): void {
     translationKey = `${timeKeyPrefix}${randomIndex}`;
   }
   let usingFallback = false;
+  let nameSubstitution = userName;
+  if (!nameSubstitution) {
+    const defaultName = (window as any).getTranslation?.('greetingDefaultName', '');
+    usingFallback = !defaultName;
+    nameSubstitution = defaultName || globalThis.chrome?.i18n?.getMessage('greetingDefaultName') || 'friend';
+  }
+
   const dayOfWeekKey = `weekday_${dayOfWeek}`;
   let currentDayName = '';
   const dayMessage = (window as any).getTranslation?.(dayOfWeekKey);
@@ -397,9 +412,9 @@ function renderGreeting(wrapper: HTMLElement): void {
     usingFallback = true;
     try {
       if (translationKey.startsWith('greetWeek')) {
-        rawGreeting = chrome.i18n.getMessage(translationKey, [currentDayName, userName]);
+        rawGreeting = chrome.i18n.getMessage(translationKey, [currentDayName, nameSubstitution]);
       } else {
-        rawGreeting = chrome.i18n.getMessage(translationKey, [userName]);
+        rawGreeting = chrome.i18n.getMessage(translationKey, [nameSubstitution]);
       }
     } catch (error) {
       rawGreeting = translationKey;
@@ -409,29 +424,19 @@ function renderGreeting(wrapper: HTMLElement): void {
   if (translationKey.startsWith('greetWeek')) {
     rawGreeting = rawGreeting
       .replace(/\$(?:WEEK|SEMANA|DAY|DIA)\$/gi, currentDayName)
-      .replace(/\$(?:NAME|NOMBRE|USER|USUARIO)\$/gi, userName);
+      .replace(/\$(?:NAME|NOMBRE|USER|USUARIO)\$/gi, () => nameSubstitution);
     if (rawGreeting.includes(currentDayName)) {
-      rawGreeting = rawGreeting.replace(/\$[A-Z0-9_]+\$/gi, userName);
+      rawGreeting = rawGreeting.replace(/\$[A-Z0-9_]+\$/gi, () => nameSubstitution);
     } else {
-      rawGreeting = rawGreeting.replace(/\$[A-Z0-9_]+\$/i, currentDayName).replace(/\$[A-Z0-9_]+\$/gi, userName);
+      rawGreeting = rawGreeting.replace(/\$[A-Z0-9_]+\$/i, currentDayName).replace(/\$[A-Z0-9_]+\$/gi, () => nameSubstitution);
     }
   } else {
     rawGreeting = rawGreeting
-      .replace(/\$(?:NAME|NOMBRE|USER|USUARIO)\$/gi, userName)
-      .replace(/\$[A-Z0-9_]+\$/gi, userName);
+      .replace(/\$[A-Z0-9_]+\$/gi, () => nameSubstitution);
   }
 
   if (!userName) {
-    rawGreeting = rawGreeting
-      .replace(/^[\s,]+/, '')
-      .replace(/,\s*([!?.,;:])/g, '$1')
-      .replace(/\s+([!?.,;:])/g, '$1')
-      .replace(/\s{2,}/g, ' ')
-      .trim();
-
-    if (rawGreeting.length > 0) {
-      rawGreeting = rawGreeting.charAt(0).toUpperCase() + rawGreeting.slice(1);
-    }
+    rawGreeting = rawGreeting.charAt(0).toUpperCase() + rawGreeting.slice(1);
   }
 
   const finalGreetingText = rawGreeting

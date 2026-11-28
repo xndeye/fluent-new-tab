@@ -82,6 +82,9 @@
   "displayGreeting": {
     "message": "Powitanie"
   },
+  "greetingDefaultName": {
+    "message": "przyjacielu"
+  },
   "greetingNameLabel": {
     "message": "Twoje imię"
   },

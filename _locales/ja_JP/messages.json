@@ -82,6 +82,9 @@
   "displayGreeting": {
     "message": "ご挨拶"
   },
+  "greetingDefaultName": {
+    "message": "ユーザー"
+  },
   "greetingNameLabel": {
     "message": "あなたのお名前"
   },

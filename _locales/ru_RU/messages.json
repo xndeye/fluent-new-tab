@@ -82,6 +82,9 @@
   "displayGreeting": {
     "message": "Приветствие"
   },
+  "greetingDefaultName": {
+    "message": "друг"
+  },
   "greetingNameLabel": {
     "message": "Ваше имя"
   },

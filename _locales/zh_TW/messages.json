@@ -82,6 +82,9 @@
   "displayGreeting": {
     "message": "問候語"
   },
+  "greetingDefaultName": {
+    "message": "朋友"
+  },
   "greetingNameLabel": {
     "message": "您的稱呼"
   },

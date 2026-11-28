@@ -7,9 +7,10 @@
  */
 
 import * as refs from '@/core/shared/dom-refs';
-import { getInputTarget, getSelectTarget } from '@/core/shared/dom-utils';
+import { getById, getInputTarget, getSelectTarget, getLocalizedWarningText } from '@/core/shared/dom-utils';
 import { applyAccentColor } from '@/core/boot/theme';
 import { getDisplayScaleBounds, getDisplayScaleForType, applyDisplayScale, getTimeFormat } from '@/core/boot/display';
+import { getHitokotoCategories, parseHitokotoUrl } from '@/core/boot/hitokoto';
 
 import { currentCityData, activeShortcutDropdowns } from '@/core/shared/state';
 import { WeatherUnit, WallpaperType, WallpaperSource } from '@/core/shared/types';
@@ -328,7 +329,53 @@ export function bindSurfaceTintFeature(): void {
   });
 }
 
+function bindHitokotoSettings(refreshDisplay: () => void): void {
+  const categoryGroup = document.getElementById('hitokotoCategories');
+  const api = getById<HTMLSelectElement>('hitokotoApiSelect');
+  const urlGroup = document.getElementById('hitokotoUrlGroup');
+  const url = getById<HTMLInputElement>('hitokotoUrlInput');
+  if (!categoryGroup || !api || !urlGroup || !url) return;
+
+  const categories = Array.from(categoryGroup.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'));
+  const savedCategories = getHitokotoCategories();
+  categories.forEach((input) => {
+    input.checked = savedCategories.includes(input.value);
+  });
+  api.value = localStorage.getItem('hitokotoApi') || 'china';
+  url.value = localStorage.getItem('hitokotoUrl') || '';
+  const updateUrlVisibility = () => {
+    urlGroup.style.display = api.value === 'custom' ? 'flex' : 'none';
+  };
+  updateUrlVisibility();
+
+  categoryGroup.addEventListener('change', () => {
+    const selected = categories.filter((input) => input.checked).map((input) => input.value);
+    localStorage.setItem('hitokotoCategory', selected.join(','));
+    refreshDisplay();
+  });
+  api.addEventListener('change', () => {
+    localStorage.setItem('hitokotoApi', api.value);
+    updateUrlVisibility();
+    refreshDisplay();
+  });
+  url.addEventListener('input', () => url.setCustomValidity(''));
+  url.addEventListener('change', () => {
+    const value = url.value.trim();
+    if (value && !parseHitokotoUrl(value)) {
+      url.setCustomValidity(
+        getLocalizedWarningText('hitokotoInvalidUrl', 'Enter a valid HTTP or HTTPS URL without credentials.'),
+      );
+      url.reportValidity();
+      return;
+    }
+    localStorage.setItem('hitokotoUrl', value);
+    refreshDisplay();
+  });
+}
+
 export function bindDisplayFeature(options: any): void {
+  const subHitokoto = document.getElementById('subHitokoto');
+  bindHitokotoSettings(() => options.initDisplayWidget(refs.displayWrapper));
   const toggleDisplay = document.getElementById('toggleDisplay') as HTMLInputElement | null;
   if (toggleDisplay) {
     toggleDisplay.checked = options.getDisplayEnabled();
@@ -485,8 +532,9 @@ export function bindDisplayFeature(options: any): void {
       if (refs.subGreeting) refs.subGreeting.style.display = 'none';
       if (refs.subTime) refs.subTime.style.display = 'none';
       if (refs.subDate) refs.subDate.style.display = 'none';
+      if (subHitokoto) subHitokoto.style.display = preset === 'hitokoto' ? 'flex' : 'none';
 
-      const hasAdvanced = ['greeting', 'time', 'date', 'timedate'].includes(preset);
+      const hasAdvanced = ['greeting', 'time', 'date', 'timedate', 'hitokoto'].includes(preset);
       if (refs.displayAdvancedSetting) {
         refs.displayAdvancedSetting.style.display = hasAdvanced ? 'flex' : 'none';
       }
