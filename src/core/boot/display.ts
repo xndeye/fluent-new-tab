@@ -6,6 +6,8 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { renderHitokoto, stopHitokoto } from '@/core/boot/hitokoto';
+
 let displayInterval: number | null = null;
 
 export function getDisplayScaleBounds(displayType: string): {
@@ -15,7 +17,7 @@ export function getDisplayScaleBounds(displayType: string): {
   const hasSearch = localStorage.getItem('searchBarVisible') !== 'false';
   const hasShortcuts = localStorage.getItem('shortcutsVisible') !== 'false';
 
-  if (displayType === 'greeting') {
+  if (displayType === 'greeting' || displayType === 'hitokoto') {
     return { min: 50, max: 140 };
   }
   if (displayType === 'date' || displayType === 'weekday') {
@@ -62,11 +64,13 @@ export function initDisplayWidget(wrapper: HTMLElement | null): void {
   if (!wrapper) return;
   if (displayInterval) {
     window.clearInterval(displayInterval);
+    displayInterval = null;
   }
 
   const isEnabled = localStorage.getItem('displayEnabled') !== 'false';
 
   if (!isEnabled) {
+    stopHitokoto(wrapper);
     wrapper.style.display = 'none';
     return;
   }
@@ -75,6 +79,7 @@ export function initDisplayWidget(wrapper: HTMLElement | null): void {
   const currentMode = localStorage.getItem('displayType') || 'greeting';
   applyDisplayScale(currentMode);
   updateDisplayContent(wrapper);
+  if (currentMode === 'hitokoto') return;
   displayInterval = window.setInterval(() => {
     updateDisplayContent(wrapper);
   }, 1000);
@@ -86,12 +91,15 @@ function updateDisplayContent(wrapper: HTMLElement): void {
     displayType = 'timedate';
   }
   if (wrapper.dataset.currentMode !== displayType) {
+    if (wrapper.dataset.currentMode === 'hitokoto') stopHitokoto(wrapper);
     wrapper.textContent = '';
     wrapper.dataset.currentMode = displayType;
     wrapper.dataset.lastCache = '';
   }
   if (displayType === 'greeting') {
     renderGreeting(wrapper);
+  } else if (displayType === 'hitokoto') {
+    void renderHitokoto(wrapper);
   } else {
     renderTimeDate(wrapper, displayType);
   }

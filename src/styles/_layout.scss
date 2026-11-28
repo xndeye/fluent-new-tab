@@ -59,6 +59,34 @@ body[data-search-active='false'][data-shortcuts-active='false'] .container,
   line-height: 1.2;
 }
 
+.display-wrapper[data-current-mode='hitokoto'] {
+  flex-direction: column;
+  gap: 0.45rem;
+
+  > .greeting-text {
+    max-width: 100%;
+    font-size: min(calc(var(--font-size-xl) * var(--display-scale) * 0.8), 8vh, 10vw);
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.4;
+    text-wrap: balance;
+
+    &[role='status'] {
+      font-size: var(--font-size-sm);
+      font-weight: 400;
+      opacity: 0.75;
+    }
+  }
+
+  > .hitokoto-source {
+    max-width: 100%;
+    font-size: var(--font-size-sm);
+    color: var(--text-color);
+    opacity: 0.75;
+    overflow-wrap: anywhere;
+  }
+}
+
 .time-date-text {
   font-size: min(calc(var(--font-size-xxl) * var(--display-scale)), 28vh, 85vw);
   line-height: 1;
