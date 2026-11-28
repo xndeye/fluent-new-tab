@@ -29,6 +29,7 @@ export class WarningModalManager {
   private messageEl!: HTMLElement;
   private btnConfirm!: HTMLButtonElement;
   private btnCancel!: HTMLButtonElement;
+  private trigger: HTMLElement | null = null;
   private handleKeydownBound: (event: KeyboardEvent) => void;
 
   constructor() {
@@ -46,9 +47,13 @@ export class WarningModalManager {
     }
   }
 
-  public show(options: WarningModalOptions): void {
+  public show(options: WarningModalOptions, trigger?: HTMLElement): void {
     this.ensureMounted();
     if (!this.overlay) return;
+    const focused = document.activeElement;
+    if (!this.overlay.classList.contains('active') || !this.overlay.contains(focused)) {
+      this.trigger = trigger ?? (focused instanceof HTMLElement ? focused : null);
+    }
     const confirmVariant = options.confirmVariant || 'accent';
     this.titleEl.textContent = options.title;
     this.messageEl.textContent = '';
@@ -99,6 +104,7 @@ export class WarningModalManager {
       this.close();
       options.onCancel?.();
     };
+    if (confirmVariant === 'danger') this.btnCancel.focus({ preventScroll: true });
   }
 
   public close(): void {
@@ -108,11 +114,26 @@ export class WarningModalManager {
     document.removeEventListener('keydown', this.handleKeydownBound);
     if (this.btnConfirm) this.btnConfirm.onclick = null;
     if (this.btnCancel) this.btnCancel.onclick = null;
+    const trigger = this.trigger;
+    this.trigger = null;
+    if (trigger?.isConnected && document.activeElement !== trigger) trigger.focus({ preventScroll: true });
   }
 
   private handleKeydown(event: KeyboardEvent): void {
-    if (!this.overlay || !this.overlay.classList.contains('active')) return;
-    if (event.key !== 'Enter') return;
+    if (event.defaultPrevented || !this.overlay || !this.overlay.classList.contains('active')) return;
+    const focused = document.activeElement;
+    if (event.key === 'Escape' && this.overlay.contains(focused)) {
+      event.preventDefault();
+      this.btnCancel.click();
+      return;
+    }
+    if (event.key === 'Tab' && (focused === this.btnConfirm || focused === this.btnCancel) &&
+      this.btnConfirm.classList.contains('btn-danger')) {
+      event.preventDefault();
+      (focused === this.btnConfirm ? this.btnCancel : this.btnConfirm).focus();
+      return;
+    }
+    if (event.key !== 'Enter' || focused === this.btnCancel || focused === this.btnConfirm) return;
     event.preventDefault();
     if (this.btnConfirm) this.btnConfirm.click();
   }

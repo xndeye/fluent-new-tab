@@ -8,7 +8,7 @@
 
 import { getById } from '@/core/shared/dom-utils';
 import { FeedData, FeedItem } from '@/core/shared/types';
-import { fetchAndValidateFeed, getFeedUrls } from '@/core/lazy/feed-manager';
+import { fetchAndValidateFeed, getFeedUrls, openFeedModal } from '@/core/lazy/feed-manager';
 
 const CACHE_TTL = 30 * 60 * 1000;
 let loadedFeeds: FeedData[] = [];
@@ -53,20 +53,36 @@ function renderGridItems(items: FeedItem[]): void {
   const grid = getById<HTMLDivElement>('feedGrid');
   if (!grid) return;
 
+  const editFocused = document.activeElement?.id === 'feedEmptyEditBtn';
   grid.innerHTML = '';
 
   if (items.length === 0) {
-    grid.innerHTML = `
-      <div class="feed-empty-state">
-        <svg class="feed-empty-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M18.75 20H5.25a3.25 3.25 0 0 1-3.245-3.066L2 16.75V6.25a2.25 2.25 0 0 1 2.096-2.245L4.25 4h12.5a2.25 2.25 0 0 1 2.245 2.096L19 6.25V7h.75a2.25 2.25 0 0 1 2.245 2.096L22 9.25v7.5a3.25 3.25 0 0 1-3.066 3.245zH5.25zm-13.5-1.5h13.5a1.75 1.75 0 0 0 1.744-1.607l.006-.143v-7.5a.75.75 0 0 0-.648-.743L19.75 8.5H19v7.75a.75.75 0 0 1-.648.743L18.25 17a.75.75 0 0 1-.743-.648l-.007-.102v-10a.75.75 0 0 0-.648-.743L16.75 5.5H4.25a.75.75 0 0 0-.743.648L3.5 6.25v10.5a1.75 1.75 0 0 0 1.606 1.744zh13.5zm6.996-4h3.006a.75.75 0 0 1 .102 1.493l-.102.007h-3.006a.75.75 0 0 1-.102-1.493zh3.006zm-3.003-3.495a.75.75 0 0 1 .75.75v3.495a.75.75 0 0 1-.75.75H5.748a.75.75 0 0 1-.75-.75v-3.495a.75.75 0 0 1 .75-.75zm-.75 1.5H6.498V14.5h1.995zm3.753-1.5h3.006a.75.75 0 0 1 .102 1.493l-.102.007h-3.006a.75.75 0 0 1-.102-1.494zh3.006zM5.748 7.502h9.504a.75.75 0 0 1 .102 1.494l-.102.006H5.748a.75.75 0 0 1-.102-1.493zh9.504z" fill="currentColor"/>
-        </svg>
-        <h4 class="feed-empty-title">${t('feedEmptyTitle', 'No feed items available')}</h4>
-        <p class="feed-empty-desc">${t('feedEmptyDesc', 'Open Settings &gt; Feed &gt; Edit RSS to configure your sources.')}</p>
-      </div>
-    `;
-    return;
+    const status = document.createElement('div');
+    const message = document.createElement('span');
+    status.className = 'panel-status';
+    const hasSources = getFeedUrls().length > 0;
+    message.setAttribute('role', 'status');
+    message.dataset.i18n = hasSources ? 'feedEmptyTitle' : 'panelNoFeedSources';
+    message.textContent = t(message.dataset.i18n, hasSources ? 'No feed items available' : 'No feed sources');
+    status.append(message);
+    if (!hasSources) {
+      const edit = document.createElement('button');
+      edit.id = 'feedEmptyEditBtn';
+      edit.type = 'button';
+      edit.className = 'accent-btn';
+      edit.dataset.i18n = 'panelEditFeedSources';
+      edit.textContent = t(edit.dataset.i18n, 'Edit feed sources');
+      edit.addEventListener('click', () => openFeedModal(edit));
+      status.append(edit);
+    }
+    grid.append(status);
   }
+
+  if (editFocused) {
+    (getById<HTMLButtonElement>('feedEmptyEditBtn') ??
+      getById<HTMLButtonElement>('editFeedRssBtn'))?.focus({ preventScroll: true });
+  }
+  if (items.length === 0) return;
 
   const displayItems = items.slice(0, 25);
   const frag = document.createDocumentFragment();
@@ -219,64 +235,53 @@ function updateGridDisplay(): void {
     const mixed = interleaveFeeds(loadedFeeds);
     renderGridItems(mixed);
   } else {
-    const idx = parseInt(activeFeedId, 10);
-    const targetFeed = loadedFeeds[idx];
+    const targetFeed = loadedFeeds.find((feed) => feed.url === activeFeedId);
     renderGridItems(targetFeed ? targetFeed.items : []);
   }
 }
 
-function renderNavTabs(): void {
+function renderFeedNav(): void {
   const nav = getById<HTMLElement>('feedNav');
   if (!nav) return;
 
-  nav.innerHTML = '';
-
-  const allBtn = document.createElement('button');
-  allBtn.type = 'button';
-  allBtn.className = `feed-nav-item ${activeFeedId === 'all' ? 'active' : ''}`;
-  allBtn.setAttribute('data-feed-id', 'all');
-
-  const allSpan = document.createElement('span');
-  allSpan.textContent = t('feedAll', 'All');
-  allBtn.appendChild(allSpan);
-
-  allBtn.addEventListener('click', () => {
-    activeFeedId = 'all';
-    nav.querySelectorAll('.feed-nav-item').forEach((b) => b.classList.remove('active'));
-    allBtn.classList.add('active');
-    updateGridDisplay();
-  });
-
-  nav.appendChild(allBtn);
-
-  loadedFeeds.forEach((feed, idx) => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = `feed-nav-item ${activeFeedId === String(idx) ? 'active' : ''}`;
-    btn.setAttribute('data-feed-id', String(idx));
-
-    const span = document.createElement('span');
-    span.textContent = feed.title;
-    btn.appendChild(span);
-
-    btn.addEventListener('click', () => {
-      activeFeedId = String(idx);
-      nav.querySelectorAll('.feed-nav-item').forEach((b) => b.classList.remove('active'));
-      btn.classList.add('active');
+  const focused = (document.activeElement as HTMLElement | null)?.dataset.feedId;
+  const sources = loadedFeeds.length ? [
+    { id: 'all', title: t('feedAll', 'All') },
+    ...loadedFeeds.map((feed) => ({ id: feed.url, title: feed.title })),
+  ] : [];
+  const buttons = sources.map(({ id, title }) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'panel-nav-item';
+    button.dataset.feedId = id;
+    button.textContent = title;
+    if (id === 'all') button.dataset.i18n = 'feedAll';
+    else button.title = title;
+    if (id === activeFeedId) button.setAttribute('aria-current', 'true');
+    button.addEventListener('click', () => {
+      activeFeedId = id;
+      nav.querySelector('[aria-current="true"]')?.removeAttribute('aria-current');
+      button.setAttribute('aria-current', 'true');
       updateGridDisplay();
     });
-
-    nav.appendChild(btn);
+    return button;
   });
+  nav.replaceChildren(...buttons);
+  if (focused) {
+    (buttons.find((button) => button.dataset.feedId === focused) ??
+      getById<HTMLButtonElement>('editFeedRssBtn'))?.focus({ preventScroll: true });
+  }
 }
 
 export async function loadAndRenderFeeds(): Promise<void> {
   const revision = ++loadRevision;
   const urls = getFeedUrls();
+  if (activeFeedId !== 'all' && !urls.includes(activeFeedId)) activeFeedId = 'all';
 
   if (!Array.isArray(urls) || urls.length === 0) {
     loadedFeeds = [];
-    renderNavTabs();
+    activeFeedId = 'all';
+    renderFeedNav();
     renderGridItems([]);
     return;
   }
@@ -307,8 +312,8 @@ export async function loadAndRenderFeeds(): Promise<void> {
 
   if (cachedList.length > 0) {
     loadedFeeds = cachedList;
-    renderNavTabs();
-    updateGridDisplay();
+    renderFeedNav();
+    if (activeFeedId === 'all' || cachedList.some((feed) => feed.url === activeFeedId)) updateGridDisplay();
   }
 
   if (urlsToFetch.length === 0) return;
@@ -342,12 +347,10 @@ export async function loadAndRenderFeeds(): Promise<void> {
     }
   });
 
-  if (updated.length > 0) {
-    loadedFeeds = updated;
-    if (activeFeedId !== 'all' && parseInt(activeFeedId, 10) >= loadedFeeds.length) {
-      activeFeedId = 'all';
-    }
-    renderNavTabs();
-    updateGridDisplay();
+  loadedFeeds = updated;
+  if (activeFeedId !== 'all' && !loadedFeeds.some((feed) => feed.url === activeFeedId)) {
+    activeFeedId = 'all';
   }
+  renderFeedNav();
+  updateGridDisplay();
 }

@@ -1,21 +1,73 @@
-<div id="feedDrawer" class="feed-drawer" style="display: none">
-  <div class="feed-card" id="feedCard">
-    <header class="feed-header">
-      <div class="feed-brand">
-        <svg class="feed-brand-icon" width="20" height="20" viewBox="0 0 24 24">
-          <use href="#icon-news" />
-        </svg>
-        <span class="feed-brand-title" data-i18n="feedTitle">Feed</span>
-      </div>
-      <nav class="feed-nav" id="feedNav" aria-label="Feeds Navigation">
-        <button type="button" class="feed-nav-item active" data-feed-id="all">
-          <span data-i18n="feedAll">All</span>
+<div id="panelDrawer" class="panel-drawer">
+  <div class="panel-surface">
+    <header class="panel-header">
+      <div class="panel-tabs" role="group" aria-label="Extension panel" data-i18n-label="panelTitle">
+        <button type="button" id="bookmarksTab" class="panel-tab" aria-controls="bookmarksPanel" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="currentColor" d="M6.2 21.85a.75.75 0 0 1-1.2-.6v-15C5 4.45 6.46 3 8.25 3h7.5C17.55 3 19 4.46 19 6.25v15c0 .6-.7.96-1.19.6l-5.8-4.18zm11.3-15.6c0-.97-.78-1.75-1.75-1.75h-7.5c-.96 0-1.75.78-1.75 1.75v13.53l5.06-3.64a.75.75 0 0 1 .88 0l5.06 3.64z" />
+          </svg>
+          <span data-i18n="bookmarksLabel">Bookmarks</span>
         </button>
-      </nav>
-      <div class="feed-header-actions" id="feedHeaderActions"></div>
+        <button type="button" id="feedTab" class="panel-tab" aria-controls="feedPanel" hidden>
+          <svg aria-hidden="true"><use href="#icon-news" /></svg>
+          <span data-i18n="feedTitle">Feed</span>
+        </button>
+      </div>
+      <button type="button" id="panelHeaderTrigger" class="panel-icon-button panel-header-trigger"
+        aria-controls="panelDrawer" aria-expanded="false" aria-label="Open extension panel"
+        title="Open extension panel" data-i18n-label="panelOpen">
+        <svg aria-hidden="true"><use href="#icon-chevron-down" /></svg>
+      </button>
+      <div class="panel-toolbar" hidden>
+        <div class="panel-tools" id="bookmarksToolbar" hidden>
+          <nav class="panel-nav" id="bookmarksQuickNav" aria-label="Bookmark locations"
+            data-i18n-label="bookmarksLocations"></nav>
+          <label class="bookmarks-search">
+            <svg aria-hidden="true"><use href="#icon-search" /></svg>
+            <input type="search" id="bookmarksSearch" placeholder="Search bookmarks" aria-label="Search bookmarks"
+              data-i18n="bookmarksSearchLabel" data-i18n-label="bookmarksSearchLabel" disabled />
+          </label>
+        </div>
+        <div class="panel-tools" id="feedToolbar" hidden>
+          <nav class="panel-nav" id="feedNav" aria-label="Feed sources" data-i18n-label="panelFeedSources"></nav>
+          <button type="button" id="editFeedRssBtn" class="panel-icon-button" aria-label="Edit feed sources"
+            title="Edit feed sources" data-i18n-label="panelEditFeedSources">
+            <svg aria-hidden="true"><use href="#icon-edit" /></svg>
+          </button>
+        </div>
+      </div>
     </header>
-    <div class="feed-content" id="feedContent">
-      <div class="feed-grid" id="feedGrid"></div>
-    </div>
+    <section id="bookmarksPanel" class="panel-view" role="tabpanel" aria-labelledby="bookmarksTab" tabindex="0" hidden>
+      <div id="bookmarksStatus" class="panel-status bookmarks-status" role="status"></div>
+      <div id="bookmarksWorkspace" class="panel-scroll bookmarks-content" hidden>
+        <div class="bookmarks-content-header">
+          <div class="bookmarks-heading">
+            <nav id="bookmarksPath" class="bookmarks-breadcrumb" aria-label="Bookmark path"
+              data-i18n-label="bookmarksBreadcrumbLabel"></nav>
+            <h2 id="bookmarksHeading" tabindex="-1"></h2>
+          </div>
+          <div class="bookmarks-view-switch" role="group" aria-label="Bookmark view" data-i18n-label="bookmarksViewLabel">
+            <button type="button" class="panel-icon-button" data-view="grid" aria-pressed="false"
+              aria-label="Grid" title="Grid" data-i18n-label="bookmarksGridView">
+              <svg aria-hidden="true"><use href="#icon-grid" /></svg>
+            </button>
+            <button type="button" class="panel-icon-button" data-view="list" aria-pressed="false"
+              aria-label="List" title="List" data-i18n-label="bookmarksListView">
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"
+                stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11M4 6h.1M4 12h.1M4 18h.1" /></svg>
+            </button>
+          </div>
+        </div>
+        <div id="bookmarksResultsStatus" class="panel-status" role="status"></div>
+        <div id="bookmarksResults" class="bookmarks-results"></div>
+      </div>
+    </section>
+    <section id="feedPanel" class="panel-view" role="tabpanel" aria-labelledby="feedTab" tabindex="0" hidden>
+      <div class="panel-scroll">
+        <div class="feed-grid" id="feedGrid">
+          <div class="panel-status" role="status" data-i18n="panelFeedLoading">Loading feeds…</div>
+        </div>
+      </div>
+    </section>
   </div>
 </div>

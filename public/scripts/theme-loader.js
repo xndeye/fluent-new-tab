@@ -17,22 +17,14 @@
     document.documentElement.setAttribute('data-surface-tint', 'true');
   }
 
-  const isFeedEnabled = localStorage.getItem('feedEnabled') === 'true';
-  let hasFeedLinks = false;
-  try {
-    const fl = JSON.parse(localStorage.getItem('feedRssUrls') || '[]');
-    hasFeedLinks = Array.isArray(fl) && fl.length > 0;
-  } catch {}
-  if (isFeedEnabled && hasFeedLinks) {
-    const feedMode = localStorage.getItem('feedMode') || 'minimal';
-    document.documentElement.setAttribute('data-feed-active', 'true');
-    document.documentElement.setAttribute('data-feed-mode', feedMode);
-    if (feedMode !== 'hidden' && feedMode !== 'autohide') {
-      const style = document.createElement('style');
-      style.id = 'early-feed-style';
-      style.textContent = '#feedDrawer { display: flex !important; }';
-      document.head.appendChild(style);
-    }
+  const hasPanelContent =
+    localStorage.getItem('panelShowFeed') !== 'false' || localStorage.getItem('panelShowBookmarks') === 'true';
+  if (localStorage.getItem('feedEnabled') === 'true' && hasPanelContent) {
+    const mode = localStorage.getItem('feedMode');
+    document.documentElement.dataset.panelActive = 'true';
+    document.documentElement.dataset.panelMode = mode === 'expanded' ? 'expanded' :
+      mode === 'hidden' || mode === 'autohide' ? 'hidden' : 'minimal';
+    document.documentElement.dataset.panelPreview = String('inert' in HTMLElement.prototype);
   }
 
   const wallpaperEnabled = localStorage.getItem('wallpaperEnabled') === 'true';

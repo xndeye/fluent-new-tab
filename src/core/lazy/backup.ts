@@ -63,6 +63,9 @@ export const APP_KEYS: string[] = [
   'feedEnabled',
   'feedMode',
   'feedRssUrls',
+  'panelShowFeed',
+  'panelShowBookmarks',
+  'bookmarksView',
 ];
 
 function isValidBackupPayload(data: unknown): boolean {
@@ -165,7 +168,7 @@ export function initBackupSystem(): void {
               }
               location.reload();
             },
-          });
+          }, refs.importBtn);
         } catch (error) {
           showToast('The selected file is not a valid backup.', 'assets/icons/dimiss.svg');
         }

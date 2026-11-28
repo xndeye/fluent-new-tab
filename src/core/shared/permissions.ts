@@ -54,3 +54,7 @@ export async function requestPermission(origins: string[]): Promise<boolean> {
 export async function requestApiPermission(permissions: string[]): Promise<boolean> {
   return executePermissionAction('request', { permissions }, 'requesting API permission');
 }
+
+export async function checkApiPermission(permissions: string[]): Promise<boolean> {
+  return executePermissionAction('contains', { permissions }, 'checking API permission');
+}

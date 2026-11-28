@@ -276,6 +276,11 @@ function remoteCandidates(u: URL): string[] {
   return [`https://favicon.vemetric.com/${u.hostname}?size=64`];
 }
 
+export function getBrowserFaviconUrl(pageUrl: URL): string | null {
+  const isWebPage = pageUrl.protocol === 'https:' || pageUrl.protocol === 'http:';
+  return isWebPage && hasChromeFaviconApi() ? chromeFaviconUrl(pageUrl.href) : null;
+}
+
 function isValidCachedSrc(src: string, allowChromeExt: boolean): boolean {
   if (!src) return false;
   if (src.includes('icons.duckduckgo.com')) return false;

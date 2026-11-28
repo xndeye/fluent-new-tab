@@ -711,5 +711,143 @@
   },
   "askAiEngineTip": {
     "message": "Du kan ändra AI-leverantör här"
+  },
+  "panelTitle": {
+    "message": "Extension panel"
+  },
+  "panelOpen": {
+    "message": "Open extension panel"
+  },
+  "panelClose": {
+    "message": "Collapse extension panel"
+  },
+  "panelDisplayMode": {
+    "message": "Panel display"
+  },
+  "panelModeCompact": {
+    "message": "Compact"
+  },
+  "panelModePreview": {
+    "message": "Expanded preview"
+  },
+  "feedModeHidden": {
+    "message": "Hidden"
+  },
+  "panelContentLabel": {
+    "message": "Panel content"
+  },
+  "feedTitle": {
+    "message": "Feed"
+  },
+  "feedAll": {
+    "message": "All"
+  },
+  "panelFeedSources": {
+    "message": "Feed sources"
+  },
+  "panelEditFeedSources": {
+    "message": "Edit feed sources"
+  },
+  "panelNoFeedSources": {
+    "message": "No feed sources"
+  },
+  "feedEmptyTitle": {
+    "message": "No feed items available"
+  },
+  "panelFeedLoading": {
+    "message": "Loading feeds…"
+  },
+  "bookmarksBreadcrumbLabel": {
+    "message": "Bookmark path"
+  },
+  "bookmarksLocations": {
+    "message": "Bookmark locations"
+  },
+  "bookmarksAccountLocation": {
+    "message": "Account"
+  },
+  "bookmarksDeviceLocation": {
+    "message": "On this device"
+  },
+  "bookmarksViewLabel": {
+    "message": "Bookmark view"
+  },
+  "bookmarksListView": {
+    "message": "List"
+  },
+  "bookmarksGridView": {
+    "message": "Grid"
+  },
+  "bookmarksFolderEmpty": {
+    "message": "This folder is empty"
+  },
+  "bookmarksUntitledFolder": {
+    "message": "Untitled folder"
+  },
+  "bookmarksLoading": {
+    "message": "Loading bookmarks…"
+  },
+  "bookmarksGrant": {
+    "message": "Allow bookmark access"
+  },
+  "bookmarksRetry": {
+    "message": "Retry"
+  },
+  "bookmarksLoadError": {
+    "message": "Couldn’t read bookmarks"
+  },
+  "bookmarksFolders": {
+    "message": "Folders"
+  },
+  "bookmarksSearchLabel": {
+    "message": "Search bookmarks"
+  },
+  "bookmarksSearchResults": {
+    "message": "Search results"
+  },
+  "bookmarksNoResults": {
+    "message": "No matching bookmarks or folders"
+  },
+  "bookmarksPreviousPage": {
+    "message": "Previous"
+  },
+  "bookmarksNextPage": {
+    "message": "Next"
+  },
+  "bookmarksOpenNewTab": {
+    "message": "Open in new tab"
+  },
+  "bookmarksOpenNewTabNamed": {
+    "message": "Open $TITLE$ in a new tab",
+    "placeholders": {
+      "title": {
+        "content": "$1"
+      }
+    }
+  },
+  "bookmarksDelete": {
+    "message": "Delete bookmark"
+  },
+  "bookmarksDeleteNamed": {
+    "message": "Delete bookmark: $TITLE$",
+    "placeholders": {
+      "title": {
+        "content": "$1"
+      }
+    }
+  },
+  "bookmarksDeleteConfirm": {
+    "message": "Delete “$TITLE$” from your browser bookmarks?",
+    "placeholders": {
+      "title": {
+        "content": "$1"
+      }
+    }
+  },
+  "bookmarksDeleteFailed": {
+    "message": "Couldn’t delete the bookmark"
+  },
+  "bookmarksUnsupportedAddress": {
+    "message": "This bookmark address can’t be opened here"
   }
 }

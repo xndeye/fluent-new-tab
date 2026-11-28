@@ -141,8 +141,3 @@ export const tabNameInput = getById<HTMLInputElement>('tabNameInput');
 export const tabFaviconInput = getById<HTMLInputElement>('tabFaviconInput');
 export const tabFaviconUploadBtn = getById<HTMLButtonElement>('tabFaviconUploadBtn');
 export const tabFaviconFileInput = getById<HTMLInputElement>('tabFaviconFileInput');
-
-export const feedOptionsGroup = getById<HTMLDivElement>('feedOptionsGroup');
-export const feedModeSelect = getById<HTMLSelectElement>('feedModeSelect');
-export const editFeedRssBtn = getById<HTMLButtonElement>('editFeedRssBtn');
-export const feedDrawer = getById<HTMLDivElement>('feedDrawer');

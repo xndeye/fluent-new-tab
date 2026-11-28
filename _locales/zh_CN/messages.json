@@ -711,5 +711,143 @@
   },
   "askAiEngineTip": {
     "message": "由此更改 AI 提供商"
+  },
+  "panelTitle": {
+    "message": "扩展面板"
+  },
+  "panelOpen": {
+    "message": "打开扩展面板"
+  },
+  "panelClose": {
+    "message": "收起扩展面板"
+  },
+  "panelDisplayMode": {
+    "message": "显示模式"
+  },
+  "panelModeCompact": {
+    "message": "精简"
+  },
+  "panelModePreview": {
+    "message": "展开预览"
+  },
+  "feedModeHidden": {
+    "message": "隐藏"
+  },
+  "panelContentLabel": {
+    "message": "显示内容"
+  },
+  "feedTitle": {
+    "message": "订阅"
+  },
+  "feedAll": {
+    "message": "全部"
+  },
+  "panelFeedSources": {
+    "message": "订阅源"
+  },
+  "panelEditFeedSources": {
+    "message": "编辑订阅源"
+  },
+  "panelNoFeedSources": {
+    "message": "暂无订阅源"
+  },
+  "feedEmptyTitle": {
+    "message": "暂无订阅内容"
+  },
+  "panelFeedLoading": {
+    "message": "正在加载订阅…"
+  },
+  "bookmarksBreadcrumbLabel": {
+    "message": "书签路径"
+  },
+  "bookmarksLocations": {
+    "message": "书签位置"
+  },
+  "bookmarksAccountLocation": {
+    "message": "账号"
+  },
+  "bookmarksDeviceLocation": {
+    "message": "此设备"
+  },
+  "bookmarksViewLabel": {
+    "message": "书签视图"
+  },
+  "bookmarksListView": {
+    "message": "列表"
+  },
+  "bookmarksGridView": {
+    "message": "网格"
+  },
+  "bookmarksFolderEmpty": {
+    "message": "此文件夹为空"
+  },
+  "bookmarksUntitledFolder": {
+    "message": "未命名文件夹"
+  },
+  "bookmarksLoading": {
+    "message": "正在读取书签…"
+  },
+  "bookmarksGrant": {
+    "message": "授权访问书签"
+  },
+  "bookmarksRetry": {
+    "message": "重试"
+  },
+  "bookmarksLoadError": {
+    "message": "无法读取书签"
+  },
+  "bookmarksFolders": {
+    "message": "文件夹"
+  },
+  "bookmarksSearchLabel": {
+    "message": "搜索书签"
+  },
+  "bookmarksSearchResults": {
+    "message": "搜索结果"
+  },
+  "bookmarksNoResults": {
+    "message": "未找到匹配的书签或文件夹"
+  },
+  "bookmarksPreviousPage": {
+    "message": "上一页"
+  },
+  "bookmarksNextPage": {
+    "message": "下一页"
+  },
+  "bookmarksOpenNewTab": {
+    "message": "在新标签页打开"
+  },
+  "bookmarksOpenNewTabNamed": {
+    "message": "在新标签页打开「$TITLE$」",
+    "placeholders": {
+      "title": {
+        "content": "$1"
+      }
+    }
+  },
+  "bookmarksDelete": {
+    "message": "删除书签"
+  },
+  "bookmarksDeleteNamed": {
+    "message": "删除书签：$TITLE$",
+    "placeholders": {
+      "title": {
+        "content": "$1"
+      }
+    }
+  },
+  "bookmarksDeleteConfirm": {
+    "message": "从浏览器书签中删除「$TITLE$」？",
+    "placeholders": {
+      "title": {
+        "content": "$1"
+      }
+    }
+  },
+  "bookmarksDeleteFailed": {
+    "message": "无法删除书签"
+  },
+  "bookmarksUnsupportedAddress": {
+    "message": "此书签地址无法在这里打开"
   }
 }
