@@ -25,7 +25,6 @@ import { Shortcut } from '@/core/shared/types';
 import { initTabCustomization } from '@/core/ui/tab-customization';
 import { initLocalization } from '@/core/ui/localization';
 import { initBasicSearchUI } from '@/core/boot/search';
-import { getFeedUrls } from '@/core/lazy/feed-manager';
 import { getLocalizedWarningText } from '@/core/shared/dom-utils';
 
 let brandIntervalStarted = false;
@@ -268,7 +267,6 @@ async function bootInteractive(): Promise<void> {
       initGlobalUiSystem,
       bindShortcutRadiusFeature,
       bindLauncherFeature,
-      bindFeedFeature,
       bindReduceEffectsFeature,
       bindSurfaceTintFeature,
     },
@@ -426,63 +424,7 @@ async function bootInteractive(): Promise<void> {
 
   updateLauncherVisibility(state.launcherEnabled, false);
 
-  const checkHasFeeds = (): boolean => {
-    return getFeedUrls().length > 0;
-  };
-
-  const applyFeedState = (enabled: boolean) => {
-    const active = enabled && checkHasFeeds();
-    document.documentElement.setAttribute('data-feed-active', String(active));
-    document.body.dataset.feedActive = String(active);
-    if (refs.feedDrawer) {
-      refs.feedDrawer.style.display = active ? '' : 'none';
-      if (!active) {
-        refs.feedDrawer.classList.remove('open');
-      }
-      document.getElementById('early-feed-style')?.remove();
-    }
-    if (active) {
-      import('@/core/lazy/feed-engine').then(({ loadAndRenderFeeds }) => {
-        loadAndRenderFeeds();
-      });
-      import('@/core/lazy/feed-scroll').then(({ initFeedScroll }) => {
-        initFeedScroll();
-      });
-    }
-    import('@/core/lazy/providers/weather-api').then(({ renderWeatherAlertWidget }) => {
-      renderWeatherAlertWidget();
-    });
-  };
-
-  const updateFeedVisibility = (visible: boolean, animate = true) => {
-    import('@/core/ui/ui-components').then(({ setCollapsible }) => {
-      if (refs.feedOptionsGroup) setCollapsible(refs.feedOptionsGroup, visible, animate);
-    });
-    applyFeedState(visible);
-  };
-
-  const updateFeedMode = (mode: string) => {
-    document.documentElement.setAttribute('data-feed-mode', mode);
-    if (refs.feedDrawer) {
-      refs.feedDrawer.classList.toggle('minimal', mode === 'minimal');
-      refs.feedDrawer.classList.toggle('expanded', mode === 'expanded');
-      refs.feedDrawer.classList.toggle('hidden', mode === 'hidden' || mode === 'autohide');
-      refs.feedDrawer.classList.toggle('autohide', mode === 'hidden' || mode === 'autohide');
-    }
-  };
-
-  bindFeedFeature({
-    applyInitialFeedState: () => updateFeedVisibility(state.feedEnabled, false),
-    getFeedEnabled: () => state.feedEnabled,
-    setFeedEnabled: state.setFeedEnabled,
-    getFeedMode: () => state.feedMode,
-    setFeedMode: state.setFeedMode,
-    updateFeedVisibility,
-    updateFeedMode,
-  });
-
-  updateFeedMode(state.feedMode);
-  updateFeedVisibility(state.feedEnabled, false);
+  void import('@/core/ui/panel').then(({ initPanel }) => initPanel());
 
   bindReduceEffectsFeature();
   bindSurfaceTintFeature();

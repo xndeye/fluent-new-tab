@@ -213,13 +213,3 @@ export function setDisplayScale(val: any) {
   displayScale = val;
 }
 export const activeShortcutDropdowns = new Set<HTMLElement>();
-
-export let feedEnabled = localStorage.getItem('feedEnabled') === 'true';
-export let feedMode = localStorage.getItem('feedMode') || 'minimal';
-
-export function setFeedEnabled(val: boolean) {
-  feedEnabled = val;
-}
-export function setFeedMode(val: string) {
-  feedMode = val;
-}

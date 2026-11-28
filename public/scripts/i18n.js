@@ -1,69 +1,72 @@
 const DEFAULT_LOCALE = 'en_US';
+const TRANSLATION_VERSION = chrome.runtime.getManifest().version;
 window.translationsCache = {};
+let translationRequest = 0;
 
-async function fetchLocale(loc) {
-  const u = chrome.runtime.getURL(`_locales/${loc}/messages.json`);
-  const res = await fetch(u);
-  if (!res.ok) throw new Error('File not found');
-  return await res.json();
-}
-
-async function getFullLocaleMessages(lang) {
-  let defMsg = {};
-  try {
-    defMsg = await fetchLocale(DEFAULT_LOCALE);
-  } catch (e) {}
-
-  if (!lang || lang === DEFAULT_LOCALE) {
-    return defMsg;
-  }
-
-  let langMsg = {};
-  try {
-    langMsg = await fetchLocale(lang);
-  } catch (e) {}
-
-  return Object.assign({}, defMsg, langMsg);
+async function fetchLocale(locale) {
+  const url = chrome.runtime.getURL(`_locales/${locale}/messages.json`);
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Could not load locale ${locale} (HTTP ${response.status})`);
+  return await response.json();
 }
 
 async function loadTranslations() {
-  let lang = localStorage.getItem('userLanguage') || DEFAULT_LOCALE;
+  const request = ++translationRequest;
+  const lang = localStorage.getItem('userLanguage') || DEFAULT_LOCALE;
   const cacheKey = `i18n_cache_${lang}`;
-  const cached = localStorage.getItem(cacheKey);
+  let messages;
+  try {
+    const cache = JSON.parse(localStorage.getItem(cacheKey));
+    if (cache?.version === TRANSLATION_VERSION && cache.messages && typeof cache.messages === 'object') {
+      messages = cache.messages;
+    }
+  } catch {
+    localStorage.removeItem(cacheKey);
+  }
 
-  if (cached) {
+  if (!messages) {
+    let cacheable = true;
     try {
-      let msg = JSON.parse(cached);
-      if (!msg.feedModeHidden) {
-        msg = await getFullLocaleMessages(lang);
-        localStorage.setItem(cacheKey, JSON.stringify(msg));
+      messages = await fetchLocale(DEFAULT_LOCALE);
+      if (lang !== DEFAULT_LOCALE) {
+        try {
+          Object.assign(messages, await fetchLocale(lang));
+        } catch (error) {
+          cacheable = false;
+          console.warn('Could not load selected locale', { lang, error });
+        }
       }
-      window.translationsCache = msg;
-      applyToDOM(msg);
-      document.body.classList.add('loaded');
-      document.dispatchEvent(new Event('i18nReady'));
-      getFullLocaleMessages(lang)
-        .then((fresh) => {
-          window.translationsCache = fresh;
-          localStorage.setItem(cacheKey, JSON.stringify(fresh));
-          applyToDOM(fresh);
-        })
-        .catch(() => {});
-      return;
-    } catch (e) {
-      localStorage.removeItem(cacheKey);
+      if (request !== translationRequest) return;
+    } catch (error) {
+      console.error('Could not load default translations', { error });
+      messages = {};
+      cacheable = false;
+    }
+    if (cacheable) {
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify({ version: TRANSLATION_VERSION, messages }));
+      } catch (error) {
+        console.warn('Could not cache translations', { lang, error });
+      }
     }
   }
 
-  const msg = await getFullLocaleMessages(lang);
-  window.translationsCache = msg;
-  localStorage.setItem(cacheKey, JSON.stringify(msg));
-  applyToDOM(msg);
+  if (request !== translationRequest) return;
+  window.translationsCache = messages;
+  applyToDOM(messages);
   document.body.classList.add('loaded');
   document.dispatchEvent(new Event('i18nReady'));
 }
 
 function applyToDOM(messages) {
+  document.querySelectorAll('[data-i18n-label]').forEach((el) => {
+    const message = messages[el.dataset.i18nLabel]?.message;
+    if (message) {
+      el.setAttribute('aria-label', message);
+      if (el.hasAttribute('title')) el.title = message;
+    }
+  });
+
   const elements = document.querySelectorAll('[data-i18n]');
   elements.forEach((el) => {
     const k = el.getAttribute('data-i18n');

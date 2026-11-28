@@ -10,7 +10,7 @@
 
 .wallpaper-credits {
   position: fixed;
-  bottom: 0.75rem;
+  bottom: calc(var(--panel-peek) + 0.75rem);
   right: 0.75rem;
   @include flex-center(0.3125rem);
   color: var(--text-color);
@@ -43,20 +43,7 @@
   }
 }
 
-html[data-feed-active='true'][data-feed-mode='minimal']:not(:has(.feed-drawer.open)) .wallpaper-credits,
-html[data-feed-active='true']:has(.feed-drawer.minimal:not(.open)) .wallpaper-credits,
-body[data-feed-active='true']:has(.feed-drawer.minimal:not(.open)) .wallpaper-credits {
-  bottom: calc(3rem + 0.5rem);
-}
-
-html[data-feed-active='true'][data-feed-mode='expanded']:not(:has(.feed-drawer.open)) .wallpaper-credits,
-html[data-feed-active='true']:has(.feed-drawer.expanded:not(.open)) .wallpaper-credits,
-body[data-feed-active='true']:has(.feed-drawer.expanded:not(.open)) .wallpaper-credits {
-  bottom: calc(10rem + 0.5rem);
-}
-
-html[data-feed-active='true']:has(.feed-drawer.open) .wallpaper-credits,
-body[data-feed-active='true']:has(.feed-drawer.open) .wallpaper-credits {
+html[data-panel-open='true'] .wallpaper-credits {
   opacity: 0;
   pointer-events: none;
 }

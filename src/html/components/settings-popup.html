@@ -1,3 +1,7 @@
+<button type="button" id="panelHomeTrigger" class="panel-icon-button panel-home-trigger" aria-controls="panelDrawer"
+  aria-expanded="false" aria-label="Open extension panel" title="Open extension panel" data-i18n-label="panelOpen" hidden>
+  <svg aria-hidden="true"><use href="#icon-chevron-down" /></svg>
+</button>
 <div class="settings-wrapper">
   <span class="settings-label" data-i18n="settingsTitle">Page Settings</span>
   <button id="settingsBtn" class="settings-btn">
@@ -518,32 +522,49 @@
         <svg>
           <use href="#icon-news" />
         </svg>
-        <span data-i18n="feedTitle">Feed</span>
+        <span id="panelSettingsTitle" data-i18n="panelTitle">Extension panel</span>
       </div>
       <label class="switch">
-        <input type="checkbox" id="toggleFeed" />
+        <input type="checkbox" id="togglePanel" aria-labelledby="panelSettingsTitle" />
         <span class="slider"></span>
       </label>
     </div>
 
-    <div id="feedOptionsGroup" class="setting-content">
-      <div id="feedModeGroup" class="display-sub-setting">
+    <div id="panelOptionsGroup" class="setting-content">
+      <div class="display-sub-setting">
         <div class="fluent-select-container">
-          <button type="button" class="fluent-select-trigger" data-target="feedModeSelect">
-            <span class="fluent-select-value" data-i18n="feedModeMinimal">Minimal</span>
+          <button type="button" class="fluent-select-trigger" data-target="panelModeSelect">
+            <span class="fluent-select-value" data-i18n="panelModeCompact">Compact</span>
             <span class="fluent-select-arrow"></span>
           </button>
-          <select id="feedModeSelect" class="settings-select hidden-native-select" aria-label="Feed Mode">
-            <option value="minimal" data-i18n="feedModeMinimal">Minimal</option>
-            <option value="expanded" data-i18n="feedModeExpanded">Expanded</option>
+          <select id="panelModeSelect" class="settings-select hidden-native-select" aria-label="Panel display"
+            data-i18n-label="panelDisplayMode">
+            <option value="minimal" data-i18n="panelModeCompact">Compact</option>
+            <option value="expanded" data-i18n="panelModePreview">Expanded preview</option>
             <option value="hidden" data-i18n="feedModeHidden">Hidden</option>
           </select>
         </div>
       </div>
 
-      <div id="feedRssContainer" class="switch-row child-setting" style="margin-top: 0.4rem">
-        <span class="setting-label-small" data-i18n="feedRssTitle">Feeds URL</span>
-        <button type="button" id="editFeedRssBtn" class="accent-btn" data-i18n="editLabel">Edit</button>
+      <div class="child-setting" role="group" aria-label="Panel content" data-i18n-label="panelContentLabel">
+        <div class="switch-row">
+          <label for="showPanelBookmarks" data-i18n="bookmarksLabel">Bookmarks</label>
+          <label class="fluent-checkbox">
+            <input type="checkbox" id="showPanelBookmarks" />
+            <span class="checkbox-box" aria-hidden="true"><svg><use href="#icon-checkmark" /></svg></span>
+          </label>
+        </div>
+        <div class="switch-row">
+          <label for="showPanelFeed" data-i18n="feedTitle">Feed</label>
+          <label class="fluent-checkbox">
+            <input type="checkbox" id="showPanelFeed" />
+            <span class="checkbox-box" aria-hidden="true"><svg><use href="#icon-checkmark" /></svg></span>
+          </label>
+        </div>
+        <div class="switch-row">
+          <span class="setting-label-small" data-i18n="panelFeedSources">Feed sources</span>
+          <button type="button" id="editFeedRssSettingsBtn" class="accent-btn" data-i18n="editLabel">Edit</button>
+        </div>
       </div>
     </div>
   </div>

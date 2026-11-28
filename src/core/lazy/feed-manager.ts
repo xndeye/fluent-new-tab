@@ -360,6 +360,9 @@ function createFeedRow(initialVal = '', isValidated = false): HTMLElement {
   const btn = document.createElement('button');
   btn.type = 'button';
   btn.className = 'feed-add-btn';
+  const errorMessage = document.createElement('p');
+  errorMessage.className = 'feed-input-error';
+  errorMessage.setAttribute('role', 'alert');
 
   const setButtonState = (validated: boolean) => {
     if (validated) {
@@ -379,6 +382,9 @@ function createFeedRow(initialVal = '', isValidated = false): HTMLElement {
 
   inp.addEventListener('input', () => {
     const valid = isValidHttpsUrl(inp.value);
+    errorMessage.textContent = '';
+    inp.removeAttribute('aria-invalid');
+    inp.classList.remove('is-invalid');
     inp.removeAttribute('data-validated');
     setButtonState(false);
     btn.disabled = !valid;
@@ -411,6 +417,9 @@ function createFeedRow(initialVal = '', isValidated = false): HTMLElement {
     const origin = getHostOriginPattern(rawVal);
     if (!origin) return;
 
+    errorMessage.textContent = '';
+    inp.removeAttribute('aria-invalid');
+    inp.classList.remove('is-invalid');
     btn.disabled = true;
 
     try {
@@ -437,21 +446,15 @@ function createFeedRow(initialVal = '', isValidated = false): HTMLElement {
       setTimeout(() => {
         inp.classList.remove('is-valid');
       }, 3000);
-    } catch (err: any) {
+    } catch (error) {
       inp.removeAttribute('data-validated');
       inp.classList.add('is-invalid');
+      inp.setAttribute('aria-invalid', 'true');
+      errorMessage.textContent = error instanceof Error && error.message
+        ? error.message
+        : t('feedErrorDesc', 'Failed to fetch or parse the RSS feed. Please check the URL.');
       setButtonState(false);
       updateCompleteButtonState();
-      setTimeout(() => inp.classList.remove('is-invalid'), 3000);
-
-      const { warningModal } = await import('@/core/ui/ui-components');
-      warningModal.show({
-        title: t('feedErrorTitle', 'Feed Error'),
-        message: err?.message || t('feedErrorDesc', 'Failed to fetch or parse the RSS feed. Please check the URL.'),
-        confirmText: 'OK',
-        confirmVariant: 'accent',
-        onConfirm: () => {},
-      });
     } finally {
       if (!inp.hasAttribute('data-validated')) {
         btn.disabled = !isValidHttpsUrl(inp.value);
@@ -463,27 +466,41 @@ function createFeedRow(initialVal = '', isValidated = false): HTMLElement {
   wrap.appendChild(btn);
   grp.appendChild(lbl);
   grp.appendChild(wrap);
+  grp.appendChild(errorMessage);
   row.appendChild(grp);
 
   return row;
 }
 
-export function closeFeedModal(): void {
-  const modal = getById<HTMLDivElement>('feedModal');
-  if (modal) modal.classList.remove('active');
+let feedModalTrigger: HTMLButtonElement | undefined;
+
+function closeFeedModal(modal: HTMLDialogElement): void {
+  modal.close();
+  feedModalTrigger?.focus({ preventScroll: true });
+  feedModalTrigger = undefined;
 }
 
-export function openFeedModal(): void {
+export function openFeedModal(trigger: HTMLButtonElement): void {
   mountTemplate('tpl-feed-modal');
-  const modal = getById<HTMLDivElement>('feedModal');
+  const modal = getById<HTMLDialogElement>('feedModal');
   const container = getById<HTMLDivElement>('feedInputsContainer');
-  if (!modal || !container) return;
+  if (!modal || !container || modal.open) return;
+  feedModalTrigger = trigger;
 
   if (!isInitialized) {
     isInitialized = true;
     const addBtn = getById<HTMLButtonElement>('feedAddFieldBtn');
     const closeBtn = getById<HTMLButtonElement>('closeFeedModalBtn');
     const form = getById<HTMLFormElement>('feedForm');
+
+    modal.addEventListener('click', (event) => event.stopPropagation());
+    modal.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') event.stopPropagation();
+    });
+    modal.addEventListener('cancel', (event) => {
+      event.preventDefault();
+      closeFeedModal(modal);
+    });
 
     if (addBtn) {
       addBtn.addEventListener('click', () => {
@@ -496,7 +513,7 @@ export function openFeedModal(): void {
     }
 
     if (closeBtn) {
-      closeBtn.addEventListener('click', closeFeedModal);
+      closeBtn.addEventListener('click', () => closeFeedModal(modal));
     }
 
     if (form) {
@@ -519,35 +536,9 @@ export function openFeedModal(): void {
               if (chrome.runtime.lastError) console.error(chrome.runtime.lastError);
             });
           });
-        closeFeedModal();
+        closeFeedModal(modal);
 
-        const isFeedEnabled = localStorage.getItem('feedEnabled') === 'true';
-        const hasFeeds = urls.length > 0;
-        const active = isFeedEnabled && hasFeeds;
-        document.documentElement.setAttribute('data-feed-active', String(active));
-        document.body.dataset.feedActive = String(active);
-
-        const drawer = document.getElementById('feedDrawer');
-        if (drawer) {
-          drawer.style.display = active ? '' : 'none';
-          if (!active) {
-            drawer.classList.remove('open');
-            document.getElementById('early-feed-style')?.remove();
-          }
-        }
-
-        if (active) {
-          import('@/core/lazy/feed-engine').then(({ loadAndRenderFeeds }) => {
-            loadAndRenderFeeds();
-          });
-          import('@/core/lazy/feed-scroll').then(({ initFeedScroll }) => {
-            initFeedScroll();
-          });
-        }
-
-        import('@/core/lazy/providers/weather-api').then(({ renderWeatherAlertWidget }) => {
-          renderWeatherAlertWidget();
-        });
+        void import('@/core/lazy/feed-engine').then(({ loadAndRenderFeeds }) => loadAndRenderFeeds());
       });
     }
   }
@@ -565,5 +556,6 @@ export function openFeedModal(): void {
 
   updateAddFieldButtonState();
   updateCompleteButtonState();
-  modal.classList.add('active');
+  container.querySelector<HTMLInputElement>('.feed-url-input')?.setAttribute('autofocus', '');
+  modal.showModal();
 }

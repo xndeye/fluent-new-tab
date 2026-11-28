@@ -177,17 +177,11 @@ export function renderWeatherAlertWidget(): void {
       return;
     }
 
-    const isFeedActive = document.documentElement.getAttribute('data-feed-active') === 'true';
-    const feedActions = isFeedActive ? document.getElementById('feedHeaderActions') : null;
-    const targetParent = feedActions || document.body;
-
     if (!widget) {
       widget = document.createElement('div');
       widget.id = containerId;
       widget.className = 'weather-alert-container';
-      targetParent.appendChild(widget);
-    } else if (widget.parentElement !== targetParent) {
-      targetParent.appendChild(widget);
+      document.body.appendChild(widget);
     }
 
     widget.textContent = '';

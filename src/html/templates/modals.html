@@ -234,10 +234,10 @@
 </template>
 
 <template id="tpl-feed-modal">
-  <div id="feedModal" class="modal-overlay">
+  <dialog id="feedModal" class="modal-overlay" aria-labelledby="feedModalTitle">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 data-i18n="feedTitle">Feed</h3>
+        <h3 id="feedModalTitle" data-i18n="panelEditFeedSources">Edit feed sources</h3>
         <a href="https://github.com/snw-mint/fluent-new-tab/blob/main/.github/HELP.md#rss-feed-reader" target="_blank" rel="noopener noreferrer" class="modal-help-link" title="Help">
           <svg width="24" height="24" viewBox="0 0 24 24"><use href="#icon-info" /></svg>
           <span>Help</span>
@@ -275,11 +275,12 @@
         </div>
       </form>
     </div>
-  </div>
+  </dialog>
 </template>
 
 <template id="tpl-warning-modal">
-  <div id="warningModal" class="modal-overlay">
+  <div id="warningModal" class="modal-overlay" role="dialog" aria-labelledby="warning-modal-title"
+    aria-describedby="warning-modal-message">
     <div class="modal-content">
       <h3 id="warning-modal-title"></h3>
       <p id="warning-modal-message" class="warning-modal-text"></p>
