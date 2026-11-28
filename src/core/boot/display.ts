@@ -380,6 +380,13 @@ function renderGreeting(wrapper: HTMLElement): void {
     translationKey = `${timeKeyPrefix}${randomIndex}`;
   }
   let usingFallback = false;
+  let nameSubstitution = userName;
+  if (!nameSubstitution) {
+    const defaultName = (window as any).getTranslation?.('greetingDefaultName', '');
+    usingFallback = !defaultName;
+    nameSubstitution = defaultName || globalThis.chrome?.i18n?.getMessage('greetingDefaultName') || 'friend';
+  }
+
   const dayOfWeekKey = `weekday_${dayOfWeek}`;
   let currentDayName = '';
   const dayMessage = (window as any).getTranslation?.(dayOfWeekKey);
@@ -405,9 +412,9 @@ function renderGreeting(wrapper: HTMLElement): void {
     usingFallback = true;
     try {
       if (translationKey.startsWith('greetWeek')) {
-        rawGreeting = chrome.i18n.getMessage(translationKey, [currentDayName, userName]);
+        rawGreeting = chrome.i18n.getMessage(translationKey, [currentDayName, nameSubstitution]);
       } else {
-        rawGreeting = chrome.i18n.getMessage(translationKey, [userName]);
+        rawGreeting = chrome.i18n.getMessage(translationKey, [nameSubstitution]);
       }
     } catch (error) {
       rawGreeting = translationKey;
@@ -417,29 +424,19 @@ function renderGreeting(wrapper: HTMLElement): void {
   if (translationKey.startsWith('greetWeek')) {
     rawGreeting = rawGreeting
       .replace(/\$(?:WEEK|SEMANA|DAY|DIA)\$/gi, currentDayName)
-      .replace(/\$(?:NAME|NOMBRE|USER|USUARIO)\$/gi, userName);
+      .replace(/\$(?:NAME|NOMBRE|USER|USUARIO)\$/gi, () => nameSubstitution);
     if (rawGreeting.includes(currentDayName)) {
-      rawGreeting = rawGreeting.replace(/\$[A-Z0-9_]+\$/gi, userName);
+      rawGreeting = rawGreeting.replace(/\$[A-Z0-9_]+\$/gi, () => nameSubstitution);
     } else {
-      rawGreeting = rawGreeting.replace(/\$[A-Z0-9_]+\$/i, currentDayName).replace(/\$[A-Z0-9_]+\$/gi, userName);
+      rawGreeting = rawGreeting.replace(/\$[A-Z0-9_]+\$/i, currentDayName).replace(/\$[A-Z0-9_]+\$/gi, () => nameSubstitution);
     }
   } else {
     rawGreeting = rawGreeting
-      .replace(/\$(?:NAME|NOMBRE|USER|USUARIO)\$/gi, userName)
-      .replace(/\$[A-Z0-9_]+\$/gi, userName);
+      .replace(/\$[A-Z0-9_]+\$/gi, () => nameSubstitution);
   }
 
   if (!userName) {
-    rawGreeting = rawGreeting
-      .replace(/^[\s,]+/, '')
-      .replace(/,\s*([!?.,;:])/g, '$1')
-      .replace(/\s+([!?.,;:])/g, '$1')
-      .replace(/\s{2,}/g, ' ')
-      .trim();
-
-    if (rawGreeting.length > 0) {
-      rawGreeting = rawGreeting.charAt(0).toUpperCase() + rawGreeting.slice(1);
-    }
+    rawGreeting = rawGreeting.charAt(0).toUpperCase() + rawGreeting.slice(1);
   }
 
   const finalGreetingText = rawGreeting

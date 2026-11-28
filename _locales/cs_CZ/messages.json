@@ -82,6 +82,9 @@
   "displayGreeting": {
     "message": "Pozdrav"
   },
+  "greetingDefaultName": {
+    "message": "kamaráde"
+  },
   "greetingNameLabel": {
     "message": "Vaše jméno"
   },

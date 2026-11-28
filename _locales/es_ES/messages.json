@@ -466,6 +466,9 @@
   "wizardAccentLabel": {
     "message": "Color de acento"
   },
+  "greetingDefaultName": {
+    "message": "colega"
+  },
   "greetingNameLabel": {
     "message": "Su nombre"
   },

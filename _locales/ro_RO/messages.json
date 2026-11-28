@@ -82,6 +82,9 @@
   "displayGreeting": {
     "message": "Salutare"
   },
+  "greetingDefaultName": {
+    "message": "prietene"
+  },
   "greetingNameLabel": {
     "message": "Numele tău"
   },

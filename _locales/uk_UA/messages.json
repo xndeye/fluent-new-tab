@@ -82,6 +82,9 @@
   "displayGreeting": {
     "message": "Привітання"
   },
+  "greetingDefaultName": {
+    "message": "друже"
+  },
   "greetingNameLabel": {
     "message": "Ваше ім'я"
   },

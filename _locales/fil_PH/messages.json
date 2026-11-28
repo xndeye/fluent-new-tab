@@ -82,6 +82,9 @@
   "displayGreeting": {
     "message": "Greeting"
   },
+  "greetingDefaultName": {
+    "message": "kaibigan"
+  },
   "greetingNameLabel": {
     "message": "Pangalan mo"
   },

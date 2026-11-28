@@ -82,6 +82,9 @@
   "displayGreeting": {
     "message": "Groet"
   },
+  "greetingDefaultName": {
+    "message": "beste vriend"
+  },
   "greetingNameLabel": {
     "message": "Jouw naam"
   },

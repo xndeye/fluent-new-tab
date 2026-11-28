@@ -82,6 +82,9 @@
   "displayGreeting": {
     "message": "Hilsen"
   },
+  "greetingDefaultName": {
+    "message": "min ven"
+  },
   "greetingNameLabel": {
     "message": "Dit navn"
   },

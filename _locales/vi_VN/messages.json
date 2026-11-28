@@ -82,6 +82,9 @@
   "displayGreeting": {
     "message": "Lời chào"
   },
+  "greetingDefaultName": {
+    "message": "bạn"
+  },
   "greetingNameLabel": {
     "message": "Tên của bạn"
   },

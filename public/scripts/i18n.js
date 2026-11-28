@@ -1,5 +1,5 @@
 const DEFAULT_LOCALE = 'en_US';
-const TRANSLATION_VERSION = chrome.runtime.getManifest().version;
+const TRANSLATION_VERSION = `${chrome.runtime.getManifest().version}:1`;
 window.translationsCache = {};
 let translationRequest = 0;
 
